@@ -3,6 +3,10 @@ uuid = "1cf070db-7709-424d-b906-ac2684d64932"
 authors = ["Tobias Ott"]
 version = "1.0.0-DEV"
 
+[deps]
+GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
+ShaderAbstractions = "65257c39-d410-5151-9873-9b3e5be5013e"
+
 [compat]
 julia = "1"
 
