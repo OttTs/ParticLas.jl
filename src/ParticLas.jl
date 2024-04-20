@@ -1,8 +1,7 @@
 module ParticLas
 
+using GLMakie: Point2, Point3
 
-function run_particlas()
-
-end
+include("simulation.jl")
 
 end
