@@ -1,31 +1,35 @@
-"""
-    DataContainer{T,N}
+# Channels...
+# 
+#=
+From the interactive thread, the workers need:
+- pause / reset (particles, walls) / terminate
+- walls
+- Inflow condition (velocity, density)
+- Wall accomodation_coefficient
+- do collisions
 
-A DataContainer stores some array data with type T and dimension N.
-The workers that fill the data have their own indices for slicing the data
-and a flag when they are done.
-"""
-struct DataContainer{T,N}
-    data::Array{T,N}
-    worker_indices::Vector{CartesianIndices{N,NTuple{N,UnitRange{Int64}}}}
-    worker_done::Vector{Bool}
-    function DataContainer(data, worker_indices)
-        return new{typeof(data[1]),length(size(a))}(
-            data,
-            worker_indices,
-            zeros(Bool, length(worker_indices))
-        )
-    end
-end
+From the workers, the interactive thread needs
+- Particle positions
+or
+- density / velocity / temperature
 
-isbusy(c::DataContainer) = all(c.send_done)
+What is always the same?
 
-function requestdata(c::DataContainer)
-    c.send_done .= false
-end
+=#
 
-copyto!(dest, c::DataContainer) = copyto!(dest, c.data)
+struct SettingsData
+    terminate::Bool
+    pause::Bool
+    delete_particles::Bool
+    delete_walls::Bool
 
-function senddata!(c::DataContainer, data, id)
-    copyto!(c.data[worker_indices[id]], data)
+    do_particle_collisions::Bool
+    
+    drawn_wall::NTuple{2, Point2{Float64}}
+    accomodation_coefficient::Float64
+
+    inflow_density::Float64
+    inflow_velocity::Float64
+
+    draw_type::Symbol # :particles, :density, :velocity, :temperature
 end

@@ -4,8 +4,8 @@ using GLMakie
 using GLMakie.GLFW
 
 FPS = 60
-Npts = 10^5
-Nworkers = 3
+Npts = 10^6
+Nworkers = 4
 
 function busywait(ns)
     time = time_ns()
@@ -58,7 +58,7 @@ end
 ## Setup screen ---------------------------------------------------------------------------
 px = GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).width
 py = GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).height
-window_size = (px, py)
+window_size = (1920, 1080)#(px, py)
 
 scene = Scene(size=window_size)
 
@@ -121,7 +121,15 @@ function renderloop(screen, pts, comm, term)
         wait_time = time_ns()
         #println(4)
         if success
+            #pts.val = comm.data
             pts[] = comm.data
+            #Threads.@threads for i in eachindex(comm.data)
+            #    pts[][i] = comm.data[i]
+            #end
+            
+            cpu1_time = time_ns()
+            #notify(pts)
+            #pts[] = comm.data
             requestdata(comm)
         else
             println("WTF")
@@ -140,6 +148,7 @@ function renderloop(screen, pts, comm, term)
                 "FPS=", round(10^9/(time_ns() - time)),
                 " | Workers:", round((wait_time - time)/(gpu_time - time)*100; digits=2),
                 " | CPU:", round((cpu_time - wait_time)/(gpu_time - time)*100; digits=2),
+                " | notify:", round((cpu_time - cpu1_time)/(gpu_time - time)*100; digits=2),
                 " | GPU1:", round((gpu1_time - cpu_time)/(gpu_time - time)*100; digits=2),
                 " | GPU2:", round((gpu2_time - gpu1_time)/(gpu_time - time)*100; digits=2),
                 " | GPU3:", round((gpu_time - gpu2_time)/(gpu_time - time)*100; digits=2),

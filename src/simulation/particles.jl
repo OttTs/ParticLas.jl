@@ -6,7 +6,7 @@ inside the mesh (index) is explicitly stored.
 mutable struct Particle
     position::Point2{Float64}
     velocity::Point3{Float64}
-    index::Point2{Int}
+    index::Point2{Int} # TODO Should be a Cartesian Index!
 end
 
 function Base.zero(::Type{T}) where {T<:Particle}

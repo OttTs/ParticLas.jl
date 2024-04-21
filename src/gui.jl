@@ -1,5 +1,6 @@
 
-
+# The renderloop is the only task that busywaits!
+# The simulation loop should do the simulation and wait for the renderloop
 
 
 function renderloop()
@@ -11,6 +12,7 @@ function renderloop()
         # TODO maybe replace by waitfor(data_container) -> waits until it is free
         if !isbusy(data_container)
             # Copy data and request new data
+            # Let's do it with channels...
             copydata!(data_container)
             copyto!(getfield(plot_data, current_plot), data_container)
             requestdata(data_container)
