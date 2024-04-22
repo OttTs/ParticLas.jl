@@ -1,8 +1,3 @@
-# TODO when looping, we need to minimize the number of checks!
-# Array implementation: iterate(A::Array, i=1) = (@inline; (i % UInt) - 1 < length(A) ? (@inbounds A[i], i + 1) : nothing)
-# Note: Recursive calls cannot be inlined!
-
-
 #=
 A list can contain a predefined maximum number of items.
 # Example Usage:
@@ -71,7 +66,7 @@ end
 
 Base.length(tl::ThreadedList) = sum(length(l) for l in tl._items)
 
-local_list(tl::ThreadedList, thread_id) = tl._items[thread_id]
+local(tl::ThreadedList, thread_id) = tl._items[thread_id]
 
 @inline function Base.iterate(tl::ThreadedList, state=(1, 1))
     thread_id, index = state
@@ -106,6 +101,9 @@ end
 
 Base.getindex(m::ThreadedMatrix, args...) = getindex(m._items, args...)
 
+# TODO delete
 Base.setindex!(m::ThreadedMatrix, args...) = setindex!(m._items, args...)
 
-local_items(m::ThreadedMatrix, thread_id) = @view(m._items[thread_id:m._num_threads:end])
+Base.size(m::ThreadedMatrix) = size(m._items)
+
+local(m::ThreadedMatrix, thread_id) = @view(m._items[thread_id:m._num_threads:end])

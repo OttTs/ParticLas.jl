@@ -1,17 +1,60 @@
-# TODO bulk velocity is the same as the first moment -> Reference to the same matrix!
+function collision_step!(particles, time_step, species, mesh, thread_id)
+    for index in localindices(mesh.cells, thread_id) # TODO localindices
+        cell = cells[index]
 
-#=
-Variables for the BGK collision operator
-    - Collision probability: Probability for each particle to relax
+        N, u, σ² = sample_moments(cell.particles)
 
-Sampling from the target distribution is done using
-    - bulk velocty (same as the 1. moment)
-    - standard deviation: square root of velocity variance
-=#
+        ρ = density(N, species, mesh)
+        T = temperature(σ², species)
+        P = collision_probability(ρ, T, time_step, species)
 
-function collision_probability(density, temperature, species, time_step)
-    ν = relaxation_frequency(density, temperature, species)
-    return time_step * ν
+        relax!(particles, P, u, √σ²)
+        conservation_step!(particles, u, σ²)
+
+        update!(output, index, ρ, u, T)
+        #= TODO
+        if type(output) == :density
+            output[index] = ρ
+        elseif type(output) == :velocity
+            output[index] = norm(u)
+        elseif type(output) == :temperature
+            output[index] = T
+        end
+        =#
+    end
+end
+
+function relax!(particles, P, u, σ)
+    for p in particles
+        rand() > P && continue
+        p.velocity = u + σ * randn(typeof(p.velocity))
+    end
+end
+
+function conservation_step!(particles, u, σ²)
+    _, uₙ, σₙ² = sample_moments(particles)
+
+    ratio = √(σ² / σₙ²)
+
+    for p in particles
+        p.velocity = u + ratio * (p.velocity - uₙ)
+    end
+end
+
+function sample_moments(particles)
+    N = length(particles)
+    ∑v = sum(p.velocity for p in particles)
+    ∑v² = sum(p.velocity ⋅ p.velocity for p in particles)
+    ∑c² = ∑v² - ∑v ⋅ ∑v / N
+
+    mean = ∑v / N
+    variance = ∑c² / (3(N - 1))
+    return N, mean, variance
+end
+
+function collision_probability(ρ, T, time_step, species)
+    ν = relaxation_frequency(ρ, T, species)
+    return 1 - exp(-time_step * ν)
 end
 
 function relaxation_frequency(ρ, T, species)
@@ -19,19 +62,10 @@ function relaxation_frequency(ρ, T, species)
     return ρ * BOLTZMANN_CONST * T / (μ * species.mass)
 end
 
+density(N, species, mesh) = species.weighting * species.mass * N / cell_volume(mesh)
+
+temperature(σ², species) = σ² * species.mass / BOLTZMANN_CONST
+
 function dynamic_viscosity(T, species)
     return species.ref_viscosity * (T / species.ref_temperature)^species.ref_exponent
-end
-
-#=
-Variables for momentum and energy conservation
-    - scale_ratio: sqrt(target_temperature / current_temperature)
-    - bulk_velocity
-    - new_bulk_velocity
-=#
-function scale_ratio(N, ∑vₙ¹, ∑vₙ², T, mₛ)
-    T == 0 && return 0
-    σₙ² = velocity_variance(N, ∑vₙ¹, ∑vₙ²)
-    Tₙ = temperature(σₙ², mₛ)
-    return √(T / Tₙ)
 end
