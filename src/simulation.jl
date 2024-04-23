@@ -5,28 +5,23 @@ include("simulation/statistics.jl")
 
 function simulation_thread(thread_id)
     while !terminate
-
         if !pause
-            insert_particles!()
+            # Local particles only!
+            insert_particles(particles, inflow, mesh, time_step)
+            movement_step!(particles, time_step, mesh, wall_condition)
+            # TODO send particle data here
+            deposit!(particles, mesh, thread_id)
+            settings.plot_type == :particles && send_particle_data!(particles, settings)
+            synchronize!(barrier)
 
-            movement_step!()
-
-            deposit!()
-
-            synchronize!()
-
-            collision_step!()
+            # TODO send mesh data during collision step
+            collision_step!(particles, time_step, species, mesh, thread_id, settings)
         end
-
-        # TODO
-        # send output data
-        #  -> This is done by each thread in movement_step / collision step!
-
-        # Receive is actually:
-        # thread_id == 1 && receive_settings()
-        # synchronize!()
-
-        # reset_particles, reset_walls?
+        reset_walls && delete_walls!(mesh, thread_id)
+        synchronize!(barrier)
+        thread_id == 1 && receive_settings()
+        synchronize!(barrier)
+        reset_particles && clear!(particles)
     end
 end
 

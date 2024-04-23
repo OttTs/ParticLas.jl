@@ -9,12 +9,7 @@ struct InflowCondition
     most_probable_velocity::Float64
 end
 
-function insert_particles(
-    particles::ParticleData,
-    inflow::InflowCondition,
-    mesh::Mesh,
-    time_step::Number
-)
+function insert_particles(particles, inflow, mesh, time_step)
     num_new_particles = stochastic_round(inflow.number_flux * mesh.length[2] * time_step)
 
     # Add new particles
