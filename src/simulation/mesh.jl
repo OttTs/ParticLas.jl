@@ -1,5 +1,5 @@
 struct Wall
-    normal::Vec2{Float64} # TODO Change many Point3 to Vec3!
+    normal::Vec2{Float64}
     line::Line
     function Wall(a, b)
         v = Vec(b - a)
@@ -46,4 +46,23 @@ num_cells(m::Mesh) = size(m.cells)
             end
             return index
         end for i in 1:2)
+end
+
+function add(m::Mesh, w::Wall)
+    for index in get_index(pointfrom(w.line), m):get_index(pointto(w.line), m)
+        push!(w.cells[index].walls, w)
+    end
+end
+
+function delete_particles!(m::Mesh, thread_id)
+    # Attention! Deletes the Lists for all threads! Only call in collision step!
+    for cell in local_items(m.cells, thread_id)
+        clear!(cell.particles)
+    end
+end
+
+function delete_walls!(m::Mesh, thread_id)
+    for cell in local_items(m.cells, thread_id)
+        clear!(cell.walls)
+    end
 end

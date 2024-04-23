@@ -27,7 +27,7 @@
     # Test ThreadedMatrix
     m = ParticLas.ThreadedMatrix(Int64, (10, 20), 5)
     for i in 1:10, j in 1:20
-        m[i, j] = i + (j - 1) * 10
+        m._items[i, j] = i + (j - 1) * 10
     end
 
     @test m[2, 5] == 42

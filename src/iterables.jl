@@ -66,6 +66,12 @@ struct ThreadedList{T}
     ThreadedList(T, max_length, num_threads) = new{T}(collect(List(T, max_length) for _ in 1:num_threads))
 end
 
+function clear!(tl::ThreadedList)
+    for l in tl._items
+        clear!(l)
+    end
+end
+
 Base.length(tl::ThreadedList) = sum(length(l) for l in tl._items)
 
 local_list(tl::ThreadedList, thread_id) = tl._items[thread_id]
@@ -103,11 +109,10 @@ end
 
 Base.getindex(m::ThreadedMatrix, args...) = getindex(m._items, args...)
 
-# TODO delete
-Base.setindex!(m::ThreadedMatrix, args...) = setindex!(m._items, args...)
-
 Base.size(m::ThreadedMatrix) = size(m._items)
 
 local_indices(m::ThreadedMatrix, thread_id) = thread_id:m._num_threads:length(m._items)
 
-#local_items(m::ThreadedMatrix, thread_id) = @view(m._items[thread_id:m._num_threads:end])
+local_items(m::ThreadedMatrix, thread_id) = @view(m._items[local_indices(m, thread_id)])
+
+Base.iterate(m::ThreadedMatrix) = iterate(m._items)
