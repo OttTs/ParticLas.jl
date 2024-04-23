@@ -32,7 +32,7 @@
 
     @test m[2, 5] == 42
 
-    locals = collect(ParticLas.local_items(m, i) for i in 1:5)
+    locals = collect(m[idx] for i in 1:5 for idx in ParticLas.local_indices(m, i))
 
     max_diff = 0
     for i in 1:5, j in i+1:5

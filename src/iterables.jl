@@ -23,6 +23,8 @@ function clear!(l::List)
     l._num_items = 0
 end
 
+isfull(l::List) = l._num_items >= length(l._items)
+
 Base.length(l::List) = l._num_items
 
 function Base.push!(l::List{T}, item::T) where T
@@ -66,7 +68,7 @@ end
 
 Base.length(tl::ThreadedList) = sum(length(l) for l in tl._items)
 
-local(tl::ThreadedList, thread_id) = tl._items[thread_id]
+local_list(tl::ThreadedList, thread_id) = tl._items[thread_id]
 
 @inline function Base.iterate(tl::ThreadedList, state=(1, 1))
     thread_id, index = state
@@ -106,4 +108,6 @@ Base.setindex!(m::ThreadedMatrix, args...) = setindex!(m._items, args...)
 
 Base.size(m::ThreadedMatrix) = size(m._items)
 
-local(m::ThreadedMatrix, thread_id) = @view(m._items[thread_id:m._num_threads:end])
+local_indices(m::ThreadedMatrix, thread_id) = thread_id:m._num_threads:length(m._items)
+
+#local_items(m::ThreadedMatrix, thread_id) = @view(m._items[thread_id:m._num_threads:end])

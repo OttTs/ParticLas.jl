@@ -1,5 +1,5 @@
 function collision_step!(particles, time_step, species, mesh, thread_id)
-    for index in localindices(mesh.cells, thread_id) # TODO localindices
+    for index in local_indices(mesh.cells, thread_id)
         cell = cells[index]
 
         N, u, σ² = sample_moments(cell.particles)
