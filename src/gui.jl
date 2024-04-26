@@ -1,5 +1,9 @@
-
 # The renderloop is the only task that busywaits!
+function busywait(ns)
+    time = time_ns()
+    while time_ns() - time < ns; end
+end
+
 # The simulation loop should do the simulation and wait for the renderloop
 
 
