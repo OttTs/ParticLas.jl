@@ -1,8 +1,9 @@
-function collision_step!(particles, time_step, species, mesh, thread_id)
+function collision_step!(mesh, time_step, species, thread_id)
     for index in local_indices(mesh.cells, thread_id)
         cell = cells[index]
+        particles = cell.particles
 
-        N, u, σ² = sample_moments(cell.particles)
+        N, u, σ² = sample_moments(particles)
 
         ρ = density(N, species, mesh)
         T = temperature(σ², species)
@@ -11,7 +12,7 @@ function collision_step!(particles, time_step, species, mesh, thread_id)
         relax!(particles, P, u, √σ²)
         conservation_step!(particles, u, σ²)
 
-        update!(output, index, ρ, u, T)
+        send_mesh_data!(simulation_channel, index, ρ, u, T)
         #= TODO
         if type(output) == :density
             output[index] = ρ
@@ -52,20 +53,24 @@ function sample_moments(particles)
     return N, mean, variance
 end
 
-function collision_probability(ρ, T, time_step, species)
+function collision_probability(ρ, T, Δt, species)
     ν = relaxation_frequency(ρ, T, species)
-    return 1 - exp(-time_step * ν)
+    return 1 - exp(-Δt * ν)
 end
 
 function relaxation_frequency(ρ, T, species)
-    μ = dynamic_viscosity(T, species)
-    return ρ * BOLTZMANN_CONST * T / (μ * species.mass)
+    m = species.mass
+    μ = dynamic_viscosity(
+        T,
+        species.ref_temperature,
+        species.ref_viscosity,
+        species.ref_exponent
+    )
+    return ρ * BOLTZMANN_CONST * T / (μ * m)
 end
 
 density(N, species, mesh) = species.weighting * species.mass * N / cell_volume(mesh)
 
 temperature(σ², species) = σ² * species.mass / BOLTZMANN_CONST
 
-function dynamic_viscosity(T, species)
-    return species.ref_viscosity * (T / species.ref_temperature)^species.ref_exponent
-end
+dynamic_viscosity(T, Tᵣ, μᵣ, ωᵣ) = μᵣ * (T / Tᵣ)^ωᵣ

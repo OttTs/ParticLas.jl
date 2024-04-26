@@ -48,7 +48,7 @@ num_cells(m::Mesh) = size(m.cells)
         end for i in 1:2)
 end
 
-function add(m::Mesh, w::Wall)
+function add!(m::Mesh, w::Wall)
     for index in get_index(pointfrom(w.line), m):get_index(pointto(w.line), m)
         push!(w.cells[index].walls, w)
     end
