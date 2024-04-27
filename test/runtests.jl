@@ -7,4 +7,5 @@ using Statistics: mean, var
     include("test_iterables.jl")
     include("test_geometry.jl")
     include("test_statistics.jl")
+    include("test_collision.jl")
 end

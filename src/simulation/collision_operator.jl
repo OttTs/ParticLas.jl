@@ -12,7 +12,7 @@ function collision_step!(mesh, time_step, species, thread_id)
         relax!(particles, P, u, √σ²)
         conservation_step!(particles, u, σ²)
 
-        send_mesh_data!(simulation_channel, index, ρ, u, T)
+        #send_mesh_data!(simulation_channel, index, ρ, u, T)
         #= TODO
         if type(output) == :density
             output[index] = ρ

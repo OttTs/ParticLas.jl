@@ -1,7 +1,9 @@
+include("simulation/species.jl")
 include("simulation/particles.jl")
 include("simulation/statistics.jl")
+include("simulation/collision_operator.jl")
 
-
+const BOLTZMANN_CONST = 1.380649E-23
 
 function simulation_thread(
     particles,
@@ -24,12 +26,11 @@ function simulation_thread(
             synchronize!(barrier)
 
             collision_step!(
-                particles,
+                mesh,
                 time_step,
                 species,
-                mesh,
                 thread_id,
-                plotting_data # Send data during collision
+                #plotting_data # Send data during collision # TODO
             )
         end
         !data(settings).delete_walls && delete_walls!(mesh, thread_id)
