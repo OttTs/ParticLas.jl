@@ -1,7 +1,10 @@
 include("simulation/species.jl")
 include("simulation/particles.jl")
 include("simulation/statistics.jl")
+include("simulation/mesh.jl")
 include("simulation/collision_operator.jl")
+include("simulation/inflow.jl")
+include("simulation/movement.jl")
 
 const BOLTZMANN_CONST = 1.380649E-23
 

@@ -12,8 +12,8 @@ struct Cell
     particles::ThreadedList{Particle}
     walls::List{Wall}
     Cell(max_num_particles, num_threads, max_num_walls) = new(
-        ThreadedList(Particle(), max_num_particles, num_threads),
-        List(Wall(), max_num_walls)
+        ThreadedList(Particle, max_num_particles, num_threads),
+        List(Wall, max_num_walls)
     )
 end
 
@@ -22,8 +22,8 @@ struct Mesh
     cells::ThreadedMatrix{Cell}
     function Mesh(length, num_cells, num_threads, max_num_particles, max_num_walls)
         cells = ThreadedMatrix(
-            Cell(max_num_particles, num_threads, max_num_walls),
-            num_cells,
+            Cell(max_num_particles, num_threads, max_num_walls), 
+            num_cells, 
             num_threads
         )
         return new(length, cells)
@@ -36,17 +36,17 @@ cellvolume(m::Mesh) = prod(cellsize(m))
 
 num_cells(m::Mesh) = size(m.cells)
 
-@inline function get_index(x, m::Mesh)
-    return CartesianIndex(begin
-            r = x[i]
-            index = 0
-            while r > 0
-                index += 1
-                r -= Δ
-            end
-            return index
-        end for i in 1:2)
-end
+@inline get_index(x, m::Mesh) = CartesianIndex(
+    begin
+        r = x[i]
+        index = 0
+        while r > 0
+            index += 1
+            r -= cellsize(m)[1]
+        end
+        index
+    end for i in 1:2
+)
 
 function add!(m::Mesh, w::Wall)
     for index in get_index(pointfrom(w.line), m):get_index(pointto(w.line), m)

@@ -3,7 +3,7 @@ Each thread needs to insert particles at the inflow boundary in every time step.
 For this, a random point at the inflow wall is chosen and a particle velocity is sampled.
 =#
 
-struct InflowCondition
+mutable struct InflowCondition
     number_flux::Float64 # per thread!
     velocity::Float64
     most_probable_velocity::Float64
@@ -24,4 +24,14 @@ function insert_particles(particles, inflow, mesh, time_step)
 
         add_particle!(particles, position, velocity, index(position, mesh))
     end
+end
+
+function set!(c::InflowCondition, density, velocity, temperature, species, num_threads)
+    c.velocity = velocity
+    c.most_probable_velocity = √(2 * BOLTZMANN_CONST * temperature / species.mass)
+
+    ratio = velocity / c.most_probable_velocity
+    mass_flux = 0.5 * (velocity * (erf(ratio) + 1) + 
+        c.most_probable_velocity / √π * exp(-(ratio)^2)) * density
+    c.number_flux = mass_flux / (num_threads * species.mass * species.weighting)
 end

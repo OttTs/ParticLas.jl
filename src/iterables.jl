@@ -16,7 +16,7 @@ A list can contain a predefined maximum number of items.
 mutable struct List{T}
     _items::Vector{T}
     _num_items::Int64
-    List(T, max_length) = new{T}(zeros(T, max_length), 0)
+    List(T, max_length) = new{T}(Vector{T}(undef, max_length), 0)
 end
 
 function clear!(l::List)
@@ -104,7 +104,14 @@ the cells are assigned to each thread in a special way.
 struct ThreadedMatrix{T}
     _items::Matrix{T}
     _num_threads::Int64
-    ThreadedMatrix(T, size, num_threads) = new{T}(zeros(T, size), num_threads)
+    function ThreadedMatrix(item, size, num_threads)
+        T = typeof(item)
+        out = new{T}(Matrix{T}(undef, size), num_threads)
+        for i in eachindex(out._items)
+            out._items[i] = deepcopy(item)
+        end
+        return out
+    end
 end
 
 Base.getindex(m::ThreadedMatrix, args...) = getindex(m._items, args...)
