@@ -50,4 +50,4 @@ jobs:
           && echo "TESTS_SUCCESSFUL=true" >> $GITHUB_
       - name: Fail if tests failed
         if: ${{ env.TESTS_SUCCESSFUL != 'true' }}
-        run: exi
+        run: exit
