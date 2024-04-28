@@ -45,7 +45,5 @@ for j in 1:7
 end
 
 for i in 1:10000
-    #println("Changing...")
     change_variable(waitit, medone)
-    println(i)
 end
