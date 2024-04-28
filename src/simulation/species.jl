@@ -6,9 +6,9 @@ struct Species
     ref_exponent::Float64
 end
 
-function Species(mass, weighting, ref_temperature, ref_exponent; ref_diameter)
+function Species(weighting, mass, ref_temperature, ref_exponent; ref_diameter)
     μᵣ = reference_viscosity(mass, ref_temperature, ref_diameter, ref_exponent)
-    return Species(mass, weighting, ref_temperature, μᵣ, ref_exponent)
+    return Species(weighting, mass, ref_temperature, μᵣ, ref_exponent)
 end
 
 function reference_viscosity(mₛ, Tᵣ, dᵣ, ω)

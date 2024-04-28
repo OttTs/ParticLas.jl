@@ -34,8 +34,8 @@ function movement_step!(particles, time_step, mesh, wall_condition)
 end
 
 function next_wall_hit(trajectory::Line, mesh::Mesh; last_wall=nothing)
-    index_start = get_index(frompoint(trajectory), mesh)
-    index_stop = get_index(topoint(trajectory))
+    index_start = get_index(pointfrom(trajectory), mesh)
+    index_stop = get_index(pointto(trajectory), mesh)
 
     next_wall = nothing
     fraction = one(Float64)

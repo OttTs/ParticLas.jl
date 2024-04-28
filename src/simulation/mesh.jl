@@ -2,9 +2,9 @@ struct Wall
     normal::Vec2{Float64}
     line::Line
     function Wall(a, b)
-        v = Vec(b - a)
+        v = Vec(b .- a)
         normal = Vec(-v[2], v[1]) / norm(v)
-        return new(normal, Line(a, v))
+        return new(normal, Line(Point2{Float64}(a), v))
     end
 end
 
@@ -36,7 +36,7 @@ cellvolume(m::Mesh) = prod(cellsize(m))
 
 num_cells(m::Mesh) = size(m.cells)
 
-@inline get_index(x, m::Mesh) = CartesianIndex(
+@inline get_index(x, m::Mesh) = CartesianIndex((
     begin
         r = x[i]
         index = 0
@@ -46,10 +46,14 @@ num_cells(m::Mesh) = size(m.cells)
         end
         index
     end for i in 1:2
-)
+)...)
 
 function add!(m::Mesh, w::Wall)
-    for index in get_index(pointfrom(w.line), m):get_index(pointto(w.line), m)
+    min_index,max_index = minmax(
+        get_index(pointfrom(w.line), m),
+        get_index(pointto(w.line), m)
+    )
+    for index in min_index:max_index
         push!(w.cells[index].walls, w)
     end
 end
