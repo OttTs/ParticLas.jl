@@ -1,6 +1,6 @@
 function collision_step!(mesh, time_step, species, thread_id)
     for index in local_indices(mesh.cells, thread_id)
-        cell = cells[index]
+        cell = mesh.cells[index]
         particles = cell.particles
 
         N, u, σ² = sample_moments(particles)
@@ -44,8 +44,8 @@ end
 
 function sample_moments(particles)
     N = length(particles)
-    ∑v = sum(p.velocity for p in particles)
-    ∑v² = sum(p.velocity ⋅ p.velocity for p in particles)
+    ∑v = sum(p.velocity for p in particles; init=zero(Vec3{Float64}))
+    ∑v² = sum(p.velocity ⋅ p.velocity for p in particles; init=0)
     ∑c² = ∑v² - ∑v ⋅ ∑v / N
 
     mean = ∑v / N
@@ -69,7 +69,7 @@ function relaxation_frequency(ρ, T, species)
     return ρ * BOLTZMANN_CONST * T / (μ * m)
 end
 
-density(N, species, mesh) = species.weighting * species.mass * N / cell_volume(mesh)
+density(N, species, mesh) = species.weighting * species.mass * N / cellvolume(mesh)
 
 temperature(σ², species) = σ² * species.mass / BOLTZMANN_CONST
 
