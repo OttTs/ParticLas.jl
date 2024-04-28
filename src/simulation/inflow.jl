@@ -12,7 +12,7 @@ end
 function insert_particles(particles, inflow, mesh, time_step)
     num_new_particles = stochastic_round(inflow.number_flux * mesh.length[2] * time_step)
 
-    # Add new particles
+    # Add new particles (until its full)
     for _ in 1:num_new_particles
         isfull(particles) && return nothing
 
@@ -20,9 +20,9 @@ function insert_particles(particles, inflow, mesh, time_step)
         velocity = sample_inflow_velocity(inflow.most_probable_velocity, inflow.velocity)
 
         # Move back for a fraction of a time step to avoid particle clumping together
-        position = position - rand() * time_step * Point2{Float64}(velocity)
+        position = position - rand() * time_step * Vec2{Float64}(velocity)
 
-        add_particle!(particles, position, velocity, index(position, mesh))
+        push!(particles, Particle(position, velocity))
     end
 end
 

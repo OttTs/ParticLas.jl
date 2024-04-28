@@ -8,6 +8,11 @@ struct Wall
     end
 end
 
+struct BoundaryCondition
+    most_probable_velocity::Float64
+    accomodation_coefficient::Float64
+end
+
 struct Cell
     particles::ThreadedList{Particle}
     walls::List{Wall}
@@ -35,6 +40,10 @@ cellsize(m::Mesh) = m.length./num_cells(m)
 cellvolume(m::Mesh) = prod(cellsize(m))
 
 num_cells(m::Mesh) = size(m.cells)
+
+inbounds(index, m::Mesh) = checkbounds(Bool, m.cells._items, index)
+
+inbounds(x::Point2, m::Mesh) = all(0 .< x .< m.length)
 
 @inline get_index(x, m::Mesh) = CartesianIndex((
     begin
