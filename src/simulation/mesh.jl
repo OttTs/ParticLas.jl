@@ -8,29 +8,21 @@ struct Wall
     end
 end
 
-struct BoundaryCondition
-    most_probable_velocity::Float64
-    accomodation_coefficient::Float64
-end
-
 struct Cell
-    particles::ThreadedList{Particle}
-    walls::List{Wall}
-    Cell(max_num_particles, num_threads, max_num_walls) = new(
-        ThreadedList(Particle, max_num_particles, num_threads),
-        List(Wall, max_num_walls)
-    )
+    particles::ThreadedVector{Particle}
+    walls::Vector{Wall}
+    function Cell(num_threads)
+        walls = Wall[]
+        sizehint!(walls, 10000)
+        return new(ThreadedVector(Particle, num_threads), walls)
+    end
 end
 
 struct Mesh
     length::NTuple{2,Int64}
     cells::ThreadedMatrix{Cell}
-    function Mesh(length, num_cells, num_threads, max_num_particles, max_num_walls)
-        cells = ThreadedMatrix(
-            Cell(max_num_particles, num_threads, max_num_walls), 
-            num_cells, 
-            num_threads
-        )
+    function Mesh(length, num_cells, num_threads)
+        cells = ThreadedMatrix(Cell(num_threads), num_cells, num_threads)
         return new(length, cells)
     end
 end

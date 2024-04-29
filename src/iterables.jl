@@ -1,82 +1,30 @@
 #=
-A list can contain a predefined maximum number of items.
-# Example Usage:
-> push!(list, item)
-
-> for i in eachindex(list)
->     item = list[i]
->     ...
->     delete(list, i)
-> end
-
-> for item in list
->     ...
-> end
-=#
-mutable struct List{T}
-    _items::Vector{T}
-    _num_items::Int64
-    List(T, max_length) = new{T}(Vector{T}(undef, max_length), 0)
-end
-
-function clear!(l::List)
-    l._num_items = 0
-end
-
-isfull(l::List) = l._num_items >= length(l._items)
-
-Base.length(l::List) = l._num_items
-
-function Base.push!(l::List{T}, item::T) where T
-    l._num_items == length(l._items) && return -1
-    l._num_items += 1
-    l._items[l._num_items] = item
-    return 1
-end
-
-function Base.delete!(l::List, index)
-    # This also changes the ordering!
-    (index % UInt) > length(l) && return -1
-    l._items[index] = l._items[length(l)]
-    l._num_items -= 1
-end
-
-Base.getindex(l::List, args...) = getindex(l._items, args...)
-
-Base.eachindex(l::List) = reverse(1:l._num_items)
-
-@inline function Base.iterate(l::List, i=1)
-    return (i % UInt) - 1 < length(l) ? (@inbounds l._items[i], i + 1) : nothing
-end
-
-#=
-A threaded list is a list where threads may need to access separate parts.
-For example, in each cell, a threaded list of the particles is needed for each thread.
+A threaded vector us a vector where threads may need to access separate parts.
+For example, in each cell, a threaded vector of the particles is needed for each thread.
 When performing the collision, however, the thread needs to access all particles.
-
-# Example usage
-> my_list = local_list(list, thread_id)
-
-> for item in list
->     ...
-> end
 =#
-struct ThreadedList{T}
-    _items::Vector{List{T}}
-    ThreadedList(T, max_length, num_threads) = new{T}(collect(List(T, max_length) for _ in 1:num_threads))
+struct ThreadedVector{N,T}
+    _items::NTuple{N,Vector{T}}
+    function ThreadedList(T, num_threads)
+        items = tuple((T[] for _ in 1:num_threads))
+        for item in items
+            sizehint!(item, 10^6)
+        end
+        return new{num_threads,T}(items)
+    end
 end
 
-function clear!(tl::ThreadedList)
+function clear!(tl::ThreadedVector)
     for l in tl._items
         clear!(l)
     end
 end
 
-Base.length(tl::ThreadedList) = sum(length(l) for l in tl._items)
+Base.length(tl::ThreadedVector) = sum(length(l) for l in tl._items)
 
-local_list(tl::ThreadedList, thread_id) = tl._items[thread_id]
+local_list(tl::ThreadedVector, thread_id) = tl._items[thread_id]
 
-@inline function Base.iterate(tl::ThreadedList, state=(1, 1))
+@inline function Base.iterate(tl::ThreadedVector, state=(1, 1))
     thread_id, index = state
     l = tl._items[thread_id]
     while (index % UInt) > length(l)

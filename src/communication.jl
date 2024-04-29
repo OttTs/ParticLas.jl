@@ -35,6 +35,9 @@ If requested is false, the receiver can read the data, otherwise wait
 Senders can edit their data as they want until they are done!
 Then the receiver calls receive!() which swaps the data!
 =#
+
+# TODO We need 3 data stuff? Then, send is called by only one thread! after sync
+# If there are 3, we can do what we want.
 mutable struct DataChannel{T}
     _condition::Vector{Base.GenericCondition{ReentrantLock}}
     _requested::Vector{Bool}

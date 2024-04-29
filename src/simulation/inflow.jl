@@ -7,6 +7,7 @@ mutable struct InflowCondition
     number_flux::Float64 # per thread!
     velocity::Float64
     most_probable_velocity::Float64
+    InflowCondition() = new(0, 0, 0)
 end
 
 function insert_particles(particles, inflow, mesh, time_step)

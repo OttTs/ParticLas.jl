@@ -1,6 +1,8 @@
+include("simulation/constants.jl")
 include("simulation/species.jl")
 include("simulation/particles.jl")
 include("simulation/statistics.jl")
+include("simulation/wall_condition.jl")
 include("simulation/mesh.jl")
 include("simulation/collision_operator.jl")
 include("simulation/inflow.jl")
@@ -8,24 +10,42 @@ include("simulation/movement.jl")
 
 const BOLTZMANN_CONST = 1.380649E-23
 
+#=
+Used to communicate the particle / mesh data to the GUI thread
+=#
+struct SimulationData
+    particle_positions::Vector{Point2{Float64}}
+    mesh_values::Matrix{Float64}
+end
+
 function simulation_thread(
     particles,
     species,
-    inflow,
     mesh,
+    inflow,
+    wall_condition,
     time_step,
-    thread_id,
     barrier,
-    settings,
-    plotting_data
+    gui_channel,
+    sim_channel,
+    thread_id
 )
-    while !data(settings).terminate
-        if !data(settings).pause
-            # Local particles only!
-            insert_particles(particles, inflow, mesh, time_step)
-            movement_step!(particles, time_step, mesh, data(settings).wall_condition)
+    while !data(gui_channel).terminate
+        if !data(gui_channel).pause
+            insert_particles(particles, data(gui_channel).inflow, mesh, time_step)
+            movement_step!(particles, time_step, mesh, data(gui_channel).wall_condition)
             deposit!(particles, mesh, thread_id)
-            send_particle_data!(particles, plotting_data)
+
+            if data(gui_channel).plot_type == :particles
+                send!(sim_channel, thread_id) do data
+                    index = (thread_id - 1) * length(particles._items)
+                    for i in eachindex(particles)
+                        index += 1
+                        data.particle_positions[index] = particles[i].position
+                    end
+                end
+            end
+
             synchronize!(barrier)
 
             collision_step!(
@@ -33,18 +53,17 @@ function simulation_thread(
                 time_step,
                 species,
                 thread_id,
-                #plotting_data # Send data during collision # TODO
+                sim_channel,
+                data(gui_channel).plot_type
             )
         end
-        !data(settings).delete_walls && delete_walls!(mesh, thread_id)
+        !data(gui_channel).delete_walls && delete_walls!(mesh, thread_id)
         synchronize!(barrier)
-        thread_id == 1 && receive_settings_data!(settings)
-
-
+        thread_id == 1 && receive!(gui_channel)
         # Add wall and set inflow?
         synchronize!(barrier)
 
-        !data(settings).delete_particles && clear!(particles)
+        !data(gui_channel).delete_particles && clear!(particles)
     end
 end
 

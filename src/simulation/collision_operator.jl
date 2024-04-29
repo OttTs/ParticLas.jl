@@ -1,4 +1,4 @@
-function collision_step!(mesh, time_step, species, thread_id)
+function collision_step!(mesh, time_step, species, thread_id, sim_channel, plot_type)
     for index in local_indices(mesh.cells, thread_id)
         cell = mesh.cells[index]
         particles = cell.particles
@@ -12,16 +12,12 @@ function collision_step!(mesh, time_step, species, thread_id)
         relax!(particles, P, u, √σ²)
         conservation_step!(particles, u, σ²)
 
-        #send_mesh_data!(simulation_channel, index, ρ, u, T)
-        #= TODO
-        if type(output) == :density
-            output[index] = ρ
-        elseif type(output) == :velocity
-            output[index] = norm(u)
-        elseif type(output) == :temperature
-            output[index] = T
+        # Send mesh data to plot
+        if plot_type != :particles
+            send!(sim_channel, thread_id) do data
+                data.mesh_values[index] = norm(eval(plot_type))
+            end
         end
-        =#
     end
 end
 
