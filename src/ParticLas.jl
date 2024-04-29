@@ -1,6 +1,7 @@
 module ParticLas
 
-using GLMakie: Point2, Vec, Vec2, Vec3
+using GLMakie#: Point2, Vec, Vec2, Vec3, RGBf
+using GLMakie.GLFW
 using LinearAlgebra
 using StaticArrays: @SMatrix
 using SpecialFunctions: erf
@@ -8,6 +9,10 @@ using SpecialFunctions: erf
 include("geometry.jl")
 include("iterables.jl")
 include("simulation.jl")
+include("gui.jl")
+include("communication.jl")
+
+export run_particlas
 
 function run_particlas(num_sim_threads)
     # Set up the GUI
@@ -16,7 +21,7 @@ function run_particlas(num_sim_threads)
     # Set up simulation
     species = Species(1E21, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
     particles = ThreadedVector(Particle, num_sim_threads)
-    mesh = Mesh(
+    mesh = SimMesh(
         display_size ./ display_size[1],
         round.(Int, display_size .* (80 / display_size[1])),
         num_sim_threads
@@ -42,7 +47,8 @@ function run_particlas(num_sim_threads)
             barrier,
             gui_channel,
             sim_channel,
-            thread_id
+            thread_id,
+            num_sim_threads
         )
     end
 

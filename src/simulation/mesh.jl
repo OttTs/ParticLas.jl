@@ -18,26 +18,26 @@ struct Cell
     end
 end
 
-struct Mesh
+struct SimMesh
     length::NTuple{2,Int64}
     cells::ThreadedMatrix{Cell}
-    function Mesh(length, num_cells, num_threads)
+    function SimMesh(length, num_cells, num_threads)
         cells = ThreadedMatrix(Cell(num_threads), num_cells, num_threads)
         return new(length, cells)
     end
 end
 
-cellsize(m::Mesh) = m.length./num_cells(m)
+cellsize(m::SimMesh) = m.length./num_cells(m)
 
-cellvolume(m::Mesh) = prod(cellsize(m))
+cellvolume(m::SimMesh) = prod(cellsize(m))
 
-num_cells(m::Mesh) = size(m.cells)
+num_cells(m::SimMesh) = size(m.cells)
 
-inbounds(index, m::Mesh) = checkbounds(Bool, m.cells._items, index)
+inbounds(index, m::SimMesh) = checkbounds(Bool, m.cells._items, index)
 
-inbounds(x::Point2, m::Mesh) = all(0 .< x .< m.length)
+inbounds(x::Point2, m::SimMesh) = all(0 .< x .< m.length)
 
-@inline get_index(x, m::Mesh) = CartesianIndex((
+@inline get_index(x, m::SimMesh) = CartesianIndex((
     begin
         r = x[i]
         index = 0
@@ -49,7 +49,7 @@ inbounds(x::Point2, m::Mesh) = all(0 .< x .< m.length)
     end for i in 1:2
 )...)
 
-function add!(m::Mesh, w::Wall)
+function add!(m::SimMesh, w::Wall)
     min_index,max_index = minmax(
         get_index(pointfrom(w.line), m),
         get_index(pointto(w.line), m)
@@ -59,14 +59,14 @@ function add!(m::Mesh, w::Wall)
     end
 end
 
-function delete_particles!(m::Mesh, thread_id)
+function delete_particles!(m::SimMesh, thread_id)
     # Attention! Deletes the Lists for all threads! Only call in collision step!
     for cell in local_items(m.cells, thread_id)
         clear!(cell.particles)
     end
 end
 
-function delete_walls!(m::Mesh, thread_id)
+function delete_walls!(m::SimMesh, thread_id)
     for cell in local_items(m.cells, thread_id)
         clear!(cell.walls)
     end

@@ -27,7 +27,10 @@ function insert_particles(particles, inflow, mesh, time_step)
     end
 end
 
-function set!(c::InflowCondition, density, velocity, temperature, species, num_threads)
+function set!(c::InflowCondition, altitude, velocity, species, num_threads)
+    temperature = 200 # TODO make it variable?
+    density = 1.225 * exp(-0.11856 * altitude)
+
     c.velocity = velocity
     c.most_probable_velocity = √(2 * BOLTZMANN_CONST * temperature / species.mass)
 

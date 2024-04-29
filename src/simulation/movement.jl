@@ -33,7 +33,7 @@ function movement_step!(particles, time_step, mesh, wall_condition)
     end
 end
 
-function next_wall_hit(trajectory::Line, mesh::Mesh; last_wall=nothing)
+function next_wall_hit(trajectory::Line, mesh::SimMesh; last_wall=nothing)
     index_start = get_index(pointfrom(trajectory), mesh)
     index_stop = get_index(pointto(trajectory), mesh)
 

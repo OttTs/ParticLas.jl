@@ -9,6 +9,7 @@ function setup_display(scene, gui_data; position, size)
 
     display_particles = Observable(false)
     # 1. Heatmap plot for physical mesh values
+    # TODO Define xs, ys and Observable!
     mesh_variable = Observable(Matrix{Float32})
     heatmap!(display_scene, xs, ys, mesh_variable;
         interpolate = true,

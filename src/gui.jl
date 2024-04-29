@@ -14,7 +14,7 @@ mutable struct GUIData
     inflow_velocity::Float64
 
     plot_type::Symbol # :particles, :density, :velocity, :temperature
-    SettingsData() = new(
+    GUIData() = new(
         false, true, false, false,
         (Point2f(NaN,NaN), Point2f(NaN,NaN)),
         0, 0, 0,
@@ -38,6 +38,8 @@ function setup_gui()
         GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).width,
         GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).height
     )
+
+    gui_data = GUIData()
 
     scene = Scene(size=window_size, backgroundcolor=BACKGROUND_COLOR)
     campixel!(scene)

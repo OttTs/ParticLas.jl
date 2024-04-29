@@ -43,7 +43,7 @@ mutable struct DataChannel{T}
     _requested::Vector{Bool}
     _sender_data::T
     _receiver_data::T
-    DataChannel(T, num_senders=1) = new(
+    DataChannel(T, num_senders=1) = new{T}(
         [Threads.Condition() for _ in 1:num_senders],
         zeros(Bool, num_senders),
         T(), T()

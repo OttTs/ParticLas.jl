@@ -28,12 +28,13 @@ function simulation_thread(
     barrier,
     gui_channel,
     sim_channel,
-    thread_id
+    thread_id,
+    num_threads
 )
     while !data(gui_channel).terminate
         if !data(gui_channel).pause
-            insert_particles(particles, data(gui_channel).inflow, mesh, time_step)
-            movement_step!(particles, time_step, mesh, data(gui_channel).wall_condition)
+            insert_particles(particles, inflow, mesh, time_step)
+            movement_step!(particles, time_step, mesh, wall_condition)
             deposit!(particles, mesh, thread_id)
 
             if data(gui_channel).plot_type == :particles
@@ -41,7 +42,7 @@ function simulation_thread(
                     index = (thread_id - 1) * length(particles._items)
                     for i in eachindex(particles)
                         index += 1
-                        data.particle_positions[index] = particles[i].position
+                        data.particle_positions[index] = particles[i].position # TODO transform to camera system
                     end
                 end
             end
@@ -59,8 +60,27 @@ function simulation_thread(
         end
         !data(gui_channel).delete_walls && delete_walls!(mesh, thread_id)
         synchronize!(barrier)
-        thread_id == 1 && receive!(gui_channel)
-        # Add wall and set inflow?
+
+        if thread_id == 1
+            receive!(gui_channel)
+       
+            # Add wall
+            if !isnan.(data(gui_channel).new_wall)
+                add!(mesh, data(gui_channel).new_wall)
+            end
+
+            set!(
+                inflow, 
+                data(gui_channel).inflow_altitude, 
+                data(gui_channel).inflow_velocity, 
+                species, 
+                num_threads
+            )
+
+            # Set Wall condition
+            set!(wall_condition, data(gui_channel).accomodation_coefficient, species)
+        end
+
         synchronize!(barrier)
 
         !data(gui_channel).delete_particles && clear!(particles)
