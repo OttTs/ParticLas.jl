@@ -1,6 +1,6 @@
 using ParticLas
 
-particles = ParticLas.ThreadedList(ParticLas.Particle, 1000000, 1)
+particles = ParticLas.ThreadedVector(ParticLas.Particle, 1)
 particles = ParticLas.local_list(particles, 1)
 species = ParticLas.Species(1E17, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
 inflow =ParticLas.InflowCondition(0, 0, 0)

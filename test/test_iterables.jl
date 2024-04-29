@@ -1,6 +1,5 @@
 @testset "iterables" begin
-    # Test List and ThreadedList
-    list = ParticLas.ThreadedList(Int64, 10, 3)
+    list = ParticLas.ThreadedVector(Int64, 3)
 
     for i in 1:3
         my_list = ParticLas.local_list(list, i)
@@ -13,16 +12,11 @@
     @test collect(1:15) == collect(item for item in list)
 
     my_list = ParticLas.local_list(list, 1)
-    delete!(my_list, 4)
-    @test collect(my_list[i] for i in eachindex(my_list)) == [5, 3, 2, 1]
+    deleteat!(my_list, 4)
+    @test collect(my_list[i] for i in reverse(eachindex(my_list))) == [5, 3, 2, 1]
 
-    ParticLas.clear!(my_list)
+    ParticLas.empty!(my_list)
     @test length(my_list) == 0
-
-    for i in 1:10
-        push!(my_list, i)
-    end
-    @test push!(my_list, 4) == -1
 
     # Test ThreadedMatrix
     m = ParticLas.ThreadedMatrix(1, (10, 20), 5)

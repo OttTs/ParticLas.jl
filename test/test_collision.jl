@@ -1,7 +1,7 @@
 @testset "Collisions" begin
     species = ParticLas.Species(1E21, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
     # Add 10000 random particles
-    particles = ParticLas.ThreadedList(ParticLas.Particle, 10000, 2)
+    particles = ParticLas.ThreadedVector(ParticLas.Particle, 2)
     for id in 1:2
         local_particles = ParticLas.local_list(particles, id)
         for i in 1:5000

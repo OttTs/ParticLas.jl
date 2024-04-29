@@ -3,20 +3,20 @@ A threaded vector us a vector where threads may need to access separate parts.
 For example, in each cell, a threaded vector of the particles is needed for each thread.
 When performing the collision, however, the thread needs to access all particles.
 =#
-struct ThreadedVector{N,T}
-    _items::NTuple{N,Vector{T}}
-    function ThreadedList(T, num_threads)
-        items = tuple((T[] for _ in 1:num_threads))
+struct ThreadedVector{T}
+    _items::Vector{Vector{T}}
+    function ThreadedVector(T, num_threads)
+        items = collect(T[] for _ in 1:num_threads)
         for item in items
             sizehint!(item, 10^6)
         end
-        return new{num_threads,T}(items)
+        return new{T}(items)
     end
 end
 
-function clear!(tl::ThreadedVector)
-    for l in tl._items
-        clear!(l)
+function Base.empty!(tl::ThreadedVector)
+    for item in tl._items
+        empty!(item)
     end
 end
 
@@ -33,7 +33,7 @@ local_list(tl::ThreadedVector, thread_id) = tl._items[thread_id]
         l = tl._items[thread_id]
         index = 1
     end
-    return (@inbounds l._items[index], (thread_id, index + 1))
+    return (@inbounds l[index], (thread_id, index + 1))
 end
 
 #=

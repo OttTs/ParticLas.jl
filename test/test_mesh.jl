@@ -1,5 +1,5 @@
 @testset "mesh" begin
-    mesh = ParticLas.Mesh((2, 1), (120, 60), 5, 1000, 1000)
+    mesh = ParticLas.Mesh((2, 1), (120, 60), 5)
 
     @test all(ParticLas.cellsize(mesh) .≈ 1/60)
     @test ParticLas.cellvolume(mesh) ≈ 1/3600

@@ -9,7 +9,7 @@ For each particle...
 =#
 
 function movement_step!(particles, time_step, mesh, wall_condition)
-    for index in eachindex(particles)
+    for index in reverse(eachindex(particles))
         particle = particles[index]
 
         wall = nothing
