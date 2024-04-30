@@ -1,7 +1,8 @@
 module ParticLas
 
-using GLMakie#: Point2, Vec, Vec2, Vec3, RGBf
-using GLMakie.GLFW
+using GLMakie: Point2, Point2f, Vec, Vec2, Vec3, RGBf
+import GLMakie
+import GLMakie.GLFW
 using LinearAlgebra
 using StaticArrays: @SMatrix
 using SpecialFunctions: erf
@@ -16,14 +17,14 @@ export run_particlas
 
 function run_particlas(num_sim_threads)
     # Set up the GUI
-    screen, display_size, mesh_variable, particle_points = setup_gui()
+    screen, display_size, mesh_variable, particle_points, terminate = setup_gui()
 
     # Set up simulation
     species = Species(1E21, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
-    particles = ThreadedVector(Particle, num_sim_threads)
+    particles = ThreadedVector(Particle, 10^6, num_sim_threads)
     mesh = SimMesh(
-        display_size ./ display_size[1],
-        round.(Int, display_size .* (80 / display_size[1])),
+        display_size ./ display_size[2],
+        round.(Int, display_size .* (MESH_NUM_Y_CELLS / display_size[2])),
         num_sim_threads
     )
     inflow = InflowCondition()
@@ -32,13 +33,15 @@ function run_particlas(num_sim_threads)
 
     # Set up communication
     barrier = Barrier(num_sim_threads)
-    gui_channel = DataChannel(GUIData, num_sim_threads)
-    sim_channel = DataChannel(SimulationData)
+    gui_channel = DataChannel(GUIData())
+    sim_channel = DataChannel(SimulationData(size(mesh.cells)))
 
     # Add simulation threads
     for thread_id in 1:num_sim_threads
-        Threads.@spawn simulation_thread(
-            particles[thread_id],
+        #Threads.@spawn
+        #@async
+        simulation_thread(
+            local_vector(particles, thread_id),
             species,
             mesh,
             inflow,
@@ -48,19 +51,22 @@ function run_particlas(num_sim_threads)
             gui_channel,
             sim_channel,
             thread_id,
-            num_sim_threads
+            num_sim_threads,
+            display_size[2]
         )
     end
 
     # Start GUI renderloop
-    Threads.@spawn :interactive renderloop(
-        screen, 
-        gui_data, 
-        particle_points, 
-        mesh_variable, 
-        gui_channel, 
-        sim_channel
-    )
+    #Threads.@spawn :interactive
+    #@async
+    #renderloop(
+    #    screen,
+    #    particle_points,
+    #    mesh_variable,
+    #    terminate,
+    #    gui_channel,
+    #    sim_channel
+    #)
 end
 
 end

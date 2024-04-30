@@ -8,21 +8,25 @@ struct Wall
     end
 end
 
+Base.zero(::Type{T}) where {T<:Wall} = Wall(zero(Point2f), zero(Point2f))
+
 struct Cell
     particles::ThreadedVector{Particle}
-    walls::Vector{Wall}
+    walls::AllocatedVector{Wall}
     function Cell(num_threads)
-        walls = Wall[]
-        sizehint!(walls, 10000)
-        return new(ThreadedVector(Particle, num_threads), walls)
+        max_num_items = 10^3
+        walls = AllocatedVector(Wall, max_num_items)
+        return new(ThreadedVector(Particle, max_num_items, num_threads), walls)
     end
 end
 
+Base.zero(::Type{T}, num_threads) where {T<:Cell} = Cell(num_threads)
+
 struct SimMesh
-    length::NTuple{2,Int64}
+    length::NTuple{2,Float64}
     cells::ThreadedMatrix{Cell}
     function SimMesh(length, num_cells, num_threads)
-        cells = ThreadedMatrix(Cell(num_threads), num_cells, num_threads)
+        cells = ThreadedMatrix(Cell, num_cells, num_threads; args=num_threads)
         return new(length, cells)
     end
 end
@@ -61,13 +65,15 @@ end
 
 function delete_particles!(m::SimMesh, thread_id)
     # Attention! Deletes the Lists for all threads! Only call in collision step!
-    for cell in local_items(m.cells, thread_id)
-        clear!(cell.particles)
+    for i in local_indices(m.cells, thread_id)
+        cell = m.cells[i]
+        empty!(cell.particles)
     end
 end
 
 function delete_walls!(m::SimMesh, thread_id)
-    for cell in local_items(m.cells, thread_id)
-        clear!(cell.walls)
+    for i in local_indices(m.cells, thread_id)
+        cell = m.cells[i]
+        empty!(cell.walls)
     end
 end

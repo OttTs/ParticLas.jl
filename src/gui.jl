@@ -15,7 +15,7 @@ mutable struct GUIData
 
     plot_type::Symbol # :particles, :density, :velocity, :temperature
     GUIData() = new(
-        false, true, false, false,
+        false, false, false, false, # todo pause = true
         (Point2f(NaN,NaN), Point2f(NaN,NaN)),
         0, 0, 0,
         :particles
@@ -41,11 +41,11 @@ function setup_gui()
 
     gui_data = GUIData()
 
-    scene = Scene(size=window_size, backgroundcolor=BACKGROUND_COLOR)
-    campixel!(scene)
+    scene = GLMakie.Scene(size=window_size, backgroundcolor=BACKGROUND_COLOR)
+    GLMakie.campixel!(scene)
 
     # Setup display to show simulation
-    display_size = 
+    display_size =
         window_size .- (3, 2) .* BORDER_WIDTH .- (MENU_WIDTH, 0)
     mesh_variable, particle_points, display_particles, wall_points = setup_display(
         scene,
@@ -55,7 +55,7 @@ function setup_gui()
     )
 
     # Setup the settings menu
-    setup_menu(scene, display_particles, wall_points, gui_data;
+    terminate = setup_menu(scene, display_particles, wall_points, gui_data;
         position=(display_size[1], 0) .+ BORDER_WIDTH .* (2, 1),
         size=(MENU_WIDTH, display_size[2])
     )
@@ -63,41 +63,43 @@ function setup_gui()
     screen = GLMakie.Screen(scene, start_renderloop=false)
     GLFW.make_fullscreen!(screen.glscreen)
 
-    return screen, display_size, mesh_variable, particle_points
+    return screen, display_size, mesh_variable, particle_points, terminate
 end
 
-function renderloop(screen, gui_data, particle_points, mesh_variable, gui_channel, sim_channel)
-    while !gui_data.terminate
+frametime(fps) = (time_ns() / 1e9) * fps
+
+function renderloop(screen, particle_points, mesh_variable, terminate, gui_channel, sim_channel)
+    gui_data = sender_data(gui_channel)
+    while !terminate[]
         starttime = frametime(FPS)
 
         # Reset the data
         gui_data.new_wall = (Point2{Float64}(NaN), Point2{Float64}(NaN))
-        gui_data.reset_particles = false
-        gui_data.reset_walls = false
-    
+        gui_data.delete_particles = false
+        gui_data.delete_walls = false
+
         # Get new evenets and render new frame
         GLMakie.pollevents(screen)
         GLMakie.render_frame(screen)
         GLFW.SwapBuffers(screen.glscreen)
 
         # Send the gui data
-        send!(gui_channel) do data
-            copy!(data, gui_data)
-        end
+        #gui_data.terminate = terminate[]
+        #send!(gui_channel)
 
         # Receive the simulation data for the new time step
-        receive!(sim_channel)
-        if gui_data.plot_type == :particles
-            particle_points[] = data(sim_channel).particle_positions
-        else
-            mesh_variable[] = data(sim-channel).mesh_values
-        end
+        #receive!(sim_channel)
+        #if gui_data.plot_type == :particles
+        #    particle_points[] = data(sim_channel).particle_positions
+        #else
+        #    mesh_variable[] = data(sim-channel).mesh_values
+        #end
 
         # Wait for the rest of the frame
         dur = (frametime(FPS) - starttime) / 60
         dur > 0.01 && sleep(0.8 * dur)
-        while frametime(FPS) - starttime < 1; end 
-    
+        while frametime(FPS) - starttime < 1; end
+
     end
     GLFW.make_windowed!(screen.glscreen)
     close(screen; reuse=false)

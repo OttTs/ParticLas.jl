@@ -14,8 +14,8 @@ function collision_step!(mesh, time_step, species, thread_id, sim_channel, plot_
 
         # Send mesh data to plot
         if plot_type != :particles
-            send!(sim_channel, thread_id) do data
-                data.mesh_values[index] = norm(eval(plot_type))
+            set!(sim_channel) do data
+                data.mesh_values[index] = norm(eval(plot_type)) # ρ
             end
         end
     end
