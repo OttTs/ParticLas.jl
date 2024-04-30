@@ -35,7 +35,7 @@ mutable struct DataChannel{T}
     _sender_data::T
     _channel_data::T
     _receiver_data::T
-    DataChannel(x) = new{typeof(x)}(Threads.Condition(), false, x, deepcopy(x), deepcopy(x))
+    DataChannel(T) = new{T}(Threads.Condition(), false, T(), T(), T())
 end
 
 data(c::DataChannel) = c._receiver_data
@@ -86,4 +86,41 @@ function receive!(c::DataChannel)
         c._requested = true
         notify(c._condition[id])
     end
+end
+
+mutable struct GUIToSimulation
+    terminate::Bool
+    pause::Bool
+
+    plot_type::Symbol
+    inflow_altitude::Float64
+    inflow_velocity::Float64
+
+    new_wall::NTuple{2, Point2f}
+    accomodation_coefficient::Float64
+
+    delete_walls::Bool
+    delete_particles::Bool
+
+    GUIToSimulation() = new(
+        false,
+        false,
+        :particles,
+        DEFAULT_ALTITUDE,
+        DEFAULT_VELOCITY,
+        (Point2{Float64}(NaN), Point2{Float64}(NaN)),
+        DEFAULT_ACCOMODATION_COEFFICIENT,
+        false,
+        false
+    )
+end
+
+mutable struct SimulationToGUI
+    particle_positions::Vector{Point2f}
+    mesh_values::Matrix{Float32}
+
+    SimulationToGUI() = new(
+        zeros(Point2f, 10^5), # maximal number of particles
+        zeros(Float32, NUM_CELLS)
+    )
 end

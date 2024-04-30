@@ -1,4 +1,3 @@
-include("simulation/constants.jl")
 include("simulation/species.jl")
 include("simulation/particles.jl")
 include("simulation/statistics.jl")
@@ -19,6 +18,18 @@ struct SimulationData
     SimulationData(num_cells) = new(
         zeros(Point2f, MAX_NUM_PARTICLES_TO_PLOT),
         zeros(Float32, num_cells)
+    )
+end
+
+function setup_simulation(mesh_length, num_cells, num_sim_threads)
+    return (
+        ThreadedVector(Particle, 10^6, num_sim_threads),
+        Species(1E21, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10),
+        SimulationMesh(mesh_length, num_cells, num_sim_threads),
+        InflowCondition(),
+        WallCondition(),
+        1E-6,
+        Barrier(num_sim_threads)
     )
 end
 

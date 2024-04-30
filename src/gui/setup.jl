@@ -1,10 +1,126 @@
-LABEL_PLAY_BUTTON = "Play"
-LABEL_PAUSE_BUTTON = "Pause"
-CLOSE_BUTTON_SIZE=24
+function setup_gui()
+    gui_data = GUIData()
 
-function setup_menu(scene, display_particles, wall_points, gui_data; position, size)
+    # Get Window size and create Scene
+    window_size = (
+        GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).width,
+        GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).height
+    )
+    display_size = window_size .- (3, 2) .* BORDER_WIDTH .- (MENU_WIDTH, 0)
+
+    scene = GLMakie.Scene(size=window_size, backgroundcolor=BACKGROUND_COLOR)
+    GLMakie.campixel!(scene)
+
+    setup_display(scene, gui_data;
+        pos=BORDER_WIDTH .* (1, 1),
+        size=display_size
+    )
+
+    setup_menu(scene, gui_data;
+        pos=(display_size[1], 0) .+ BORDER_WIDTH .* (2, 1),
+        size=(MENU_WIDTH, display_size[2])
+    )
+
+    gui_data.screen = GLMakie.Screen(scene, start_renderloop=false)
+    GLFW.make_fullscreen!(gui_data.screen.glscreen)
+
+    return gui_data
+end
+
+#=
+===========================================================================================
+=#
+
+function setup_display(scene, gui_data; pos, size)
+    display_scene = GLMakie.Scene(scene,
+        viewport=GLMakie.Rect(pos..., size...),
+        backgroundcolor=DISPLAY_BACKGROUND_COLOR,
+        clear=true
+    )
+    GLMakie.campixel!(display_scene)
+
+    # 1. Heatmap plot for physical mesh values
+    GLMakie.heatmap!(display_scene,
+        collect(range(1, size[1], length=NUM_CELLS[1])),
+        collect(range(1, size[2], length=NUM_CELLS[2])),
+        gui_data.mesh_values;
+        interpolate = true,
+        colormap = :afmhot,
+        visible =  GLMakie.@lift(!$(gui_data.display_particles))
+    )
+
+    # 2. Scatter plot for particles
+    GLMakie.scatter!(display_scene, gui_data.particle_points;
+        marker = GLMakie.FastPixel(),
+        markersize = 2,
+        color = :black, # TODO color with velocity?
+        visible = gui_data.display_particles
+    )
+
+    # 3. Lines for walls
+    GLMakie.lines!(display_scene, gui_data.wall_points;
+        linewidth = 2,
+        color = :blue
+    )
+
+    # 4. Create rounded edges
+    stroke_width = (√8 - 2) * SCENE_CORNER_RADIUS
+    GLMakie.Box(display_scene,
+        bbox=GLMakie.Rect(0, 0, size...),
+        cornerradius=√2 * SCENE_CORNER_RADIUS,
+        width=size[1] + stroke_width,
+        height=size[2] + stroke_width,
+        strokewidth=stroke_width,
+        strokecolor=BACKGROUND_COLOR,
+        color=:transparent
+    )
+
+    # Handle drawing
+    drawing = Ref{Bool}(false)
+    GLMakie.on(GLMakie.events(display_scene).mouseposition) do p
+        p = p .- BORDER_WIDTH
+        pressed = GLMakie.ispressed(display_scene, GLMakie.Mouse.left)
+        inside = all(0 .< p .< size) # 0 or offset?
+
+        if pressed && inside && drawing[]
+            continuedrawing(gui_data, p, size[2])
+        elseif pressed && inside && !drawing[]
+            drawing[] = true
+            push!(gui_data.wall_points[], p, p)
+        elseif drawing[]
+            drawing[] = false
+            stopdrawing(gui_data, size[2])
+        end
+        notify(gui_data.wall_points)
+    end
+end
+
+function continuedrawing(gui_data, position, scaling)
+    gui_data.wall_points[][end] = position
+    if norm(gui_data.wall_points[][end] - gui_data.wall_points[][end-1]) > 5
+        gui_data.new_wall = (
+            gui_data.wall_points[][end-1] / scaling,
+            gui_data.wall_points[][end] / scaling
+        )
+        push!(gui_data.wall_points[], position)
+    end
+end
+
+function stopdrawing(gui_data, scaling)
+    gui_data.new_wall = (
+        gui_data.wall_points[][end-1] / scaling,
+        gui_data.wall_points[][end] / scaling
+    )
+    push!(gui_data.wall_points[], Point2f(NaN))
+end
+
+#=
+===========================================================================================
+=#
+
+function setup_menu(scene, gui_data; pos, size)
     # Settings Box
-    settings_bbox = GLMakie.Rect(position..., size...)
+    settings_bbox = GLMakie.Rect(pos..., size...)
     GLMakie.Box(scene,
         bbox=settings_bbox,
         cornerradius=SCENE_CORNER_RADIUS,
@@ -17,27 +133,23 @@ function setup_menu(scene, display_particles, wall_points, gui_data; position, s
 
     # Create a GridLayout for the settings
     layout = GLMakie.GridLayout(scene, bbox=settings_bbox, valign = :top)
-    # Fix mouse position offset
     layout.parent = scene
-    # Fix width of layout
     GLMakie.colsize!(layout, 1, GLMakie.Fixed(size[1] - 2 * SETTINGS_BORDER_WIDTH))
 
-    terminate = add_close_button!(scene, settings_bbox, gui_data)
+    add_close_button!(scene, gui_data, settings_bbox)
     i = add_logo!(scene, settings_bbox, layout, 1)
     i = add_gap!(layout, 10, i)
     i = add_inflow_block!(layout, gui_data, i)
     i = add_gap!(layout, 10, i)
     i = add_wall_block!(layout, gui_data, i)
     i = add_gap!(layout, 10, i)
-    i = add_menu_block!(layout, gui_data, display_particles, i)
-    i = add_buttons!(layout, gui_data, wall_points, i + 1)
+    i = add_menu_block!(layout, gui_data, i)
+    i = add_buttons!(layout, gui_data, i + 1)
     add_gap!(layout, 50, i)
-
-    return terminate
 end
 
 # -----------------------------------------------------------------------------------------
-function add_close_button!(scene, settings_bbox, gui_data)
+function add_close_button!(scene, gui_data, settings_bbox)
     close_button_size = 24
     button_close = GLMakie.Button(scene,
         bbox=GLMakie.Rect(
@@ -60,13 +172,9 @@ function add_close_button!(scene, settings_bbox, gui_data)
         strokewidth=1
     )
 
-    terminate = Ref{Bool}(false)
     GLMakie.on(button_close.clicks) do _
-        terminate[] = true
         gui_data.terminate = true
     end
-
-    return terminate
 end
 
 # -----------------------------------------------------------------------------------------
@@ -75,7 +183,7 @@ function add_logo!(scene, settings_bbox, layout, n)
     widths = settings_bbox.widths
 
     logo_size = 50
-    logo = GLMakie.load("scripts/logo.png")
+    logo = GLMakie.load("src/gui/logo.png")
     img = GLMakie.image!(scene,
         (origin[1] + widths[1]÷2) .+ (-2 * logo_size, 2 * logo_size),
         origin[2] - BORDER_WIDTH + widths[2] .+ (-logo_size, 0),
@@ -94,7 +202,7 @@ function add_logo!(scene, settings_bbox, layout, n)
 end
 
 # -----------------------------------------------------------------------------------------
-function add_inflow_block!(layout, gui_data, n, )
+function add_inflow_block!(layout, gui_data, n)
     GLMakie.Label(layout[n,:], "Inflow Conditions",
         fontsize = SECTION_FONTSIZE,
         halign=:left
@@ -173,7 +281,7 @@ function add_wall_block!(layout, gui_data, n)
 end
 
 # -----------------------------------------------------------------------------------------
-function  add_menu_block!(layout, gui_data, display_particles, n)
+function  add_menu_block!(layout, gui_data, n)
     GLMakie.Label(layout[n,:], "Plotting",
         fontsize = SECTION_FONTSIZE,
         halign=:left
@@ -207,7 +315,7 @@ function  add_menu_block!(layout, gui_data, display_particles, n)
     )
 
     GLMakie.on(menu.selection) do _
-        display_particles[] = menu.i_selected[] == 1
+        gui_data.display_particles[] = menu.i_selected[] == 1
         gui_data.plot_type = symbols[menu.i_selected[]]
     end
 
@@ -215,7 +323,7 @@ function  add_menu_block!(layout, gui_data, display_particles, n)
 end
 
 # -----------------------------------------------------------------------------------------
-function add_buttons!(layout, gui_data, wall_points, n)
+function add_buttons!(layout, gui_data, n)
     button_remove_walls = GLMakie.Button(layout[n,:],
         label = "Remove Walls",
         fontsize = CONTENT_FONTSIZE,
@@ -250,8 +358,8 @@ function add_buttons!(layout, gui_data, wall_points, n)
 
     GLMakie.on(button_remove_walls.clicks) do _
         gui_data.delete_walls = true
-        empty!(wall_points[])
-        notify(wall_points)
+        empty!(gui_data.wall_points[])
+        notify(gui_data.wall_points)
     end
 
     GLMakie.on(button_remove_particles.clicks) do _
