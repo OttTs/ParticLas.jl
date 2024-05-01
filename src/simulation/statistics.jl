@@ -7,14 +7,7 @@ function sample_inflow_velocity(most_probable_velocity, velocity=0)
     )
 end
 
-function stochastic_round(x)
-    # Round up or down to get x as the mean
-    if rand() > x - floor(x)
-        return floor(Int64, x)
-    else
-        return ceil(Int64, x)
-    end
-end
+stochastic_round(x) = (rand() > x - floor(x)) ? floor(Int64, x) : ceil(Int64, x)
 
 function samplezs(a::Number)
     # Samples the random variable zs with a given speed ratio a

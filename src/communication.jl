@@ -35,7 +35,7 @@ mutable struct DataChannel{T}
     _sender_data::T
     _channel_data::T
     _receiver_data::T
-    DataChannel(T) = new{T}(Threads.Condition(), false, T(), T(), T())
+    DataChannel(T) = new{T}(Threads.Condition(), true, T(), T(), T())
 end
 
 data(c::DataChannel) = c._receiver_data
@@ -84,7 +84,7 @@ function receive!(c::DataChannel)
 
         # Request new data
         c._requested = true
-        notify(c._condition[id])
+        notify(c._condition)
     end
 end
 
@@ -104,7 +104,7 @@ mutable struct GUIToSimulation
 
     GUIToSimulation() = new(
         false,
-        false,
+        true,
         :particles,
         DEFAULT_ALTITUDE,
         DEFAULT_VELOCITY,

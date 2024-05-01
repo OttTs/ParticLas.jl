@@ -47,7 +47,7 @@ inbounds(x::Point2, m::SimulationMesh) = all(0 .< x .< m.length)
         index = 0
         while r > 0
             index += 1
-            r -= cellsize(m)[1]
+            r -= cellsize(m)[i]
         end
         index
     end for i in 1:2
@@ -59,7 +59,7 @@ function add!(m::SimulationMesh, w::Wall)
         get_index(pointto(w.line), m)
     )
     for index in min_index:max_index
-        push!(w.cells[index].walls, w)
+        push!(m.cells[index].walls, w)
     end
 end
 

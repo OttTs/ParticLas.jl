@@ -7,6 +7,7 @@ function setup_gui()
         GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).height
     )
     display_size = window_size .- (3, 2) .* BORDER_WIDTH .- (MENU_WIDTH, 0)
+    gui_data.point_scaling = display_size[2]
 
     scene = GLMakie.Scene(size=window_size, backgroundcolor=BACKGROUND_COLOR)
     GLMakie.campixel!(scene)
@@ -22,7 +23,8 @@ function setup_gui()
     )
 
     gui_data.screen = GLMakie.Screen(scene, start_renderloop=false)
-    GLFW.make_fullscreen!(gui_data.screen.glscreen)
+    #GLFW.make_fullscreen!(gui_data.screen.glscreen)
+    GLFW.SwapInterval(1) # 0?
 
     return gui_data
 end
@@ -83,33 +85,33 @@ function setup_display(scene, gui_data; pos, size)
         inside = all(0 .< p .< size) # 0 or offset?
 
         if pressed && inside && drawing[]
-            continuedrawing(gui_data, p, size[2])
+            continuedrawing(gui_data, p, size)
         elseif pressed && inside && !drawing[]
             drawing[] = true
             push!(gui_data.wall_points[], p, p)
         elseif drawing[]
             drawing[] = false
-            stopdrawing(gui_data, size[2])
+            stopdrawing(gui_data, size)
         end
         notify(gui_data.wall_points)
     end
 end
 
-function continuedrawing(gui_data, position, scaling)
+function continuedrawing(gui_data, position, display_size)
     gui_data.wall_points[][end] = position
     if norm(gui_data.wall_points[][end] - gui_data.wall_points[][end-1]) > 5
         gui_data.new_wall = (
-            gui_data.wall_points[][end-1] / scaling,
-            gui_data.wall_points[][end] / scaling
+            gui_data.wall_points[][end-1] ./ display_size .* MESH_LENGTH,
+            gui_data.wall_points[][end] ./ display_size .* MESH_LENGTH
         )
         push!(gui_data.wall_points[], position)
     end
 end
 
-function stopdrawing(gui_data, scaling)
+function stopdrawing(gui_data, display_size)
     gui_data.new_wall = (
-        gui_data.wall_points[][end-1] / scaling,
-        gui_data.wall_points[][end] / scaling
+        gui_data.wall_points[][end-1] ./ display_size .* MESH_LENGTH,
+        gui_data.wall_points[][end] ./ display_size .* MESH_LENGTH
     )
     push!(gui_data.wall_points[], Point2f(NaN))
 end

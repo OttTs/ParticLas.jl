@@ -1,40 +1,8 @@
-#=
-Each thread needs to insert particles at the inflow boundary in every time step.
-For this, a random point at the inflow wall is chosen and a particle velocity is sampled.
-=#
-
 mutable struct InflowCondition
     number_flux::Float64 # per thread!
     velocity::Float64
     most_probable_velocity::Float64
     InflowCondition() = new(0, 0, 0)
-end
-
-function insert_particles(particles, inflow, mesh, time_step)
-    num_new_particles = stochastic_round(inflow.number_flux * mesh.length[2] * time_step)
-
-    # Add new particles
-    println("adding...")
-    for _ in 1:num_new_particles
-        position = Point2{Float64}(0, rand() * mesh.length[2])
-        velocity = sample_inflow_velocity(inflow.most_probable_velocity, inflow.velocity)
-
-        # Move back for a fraction of a time step to avoid particle clumping together
-        position = position - rand() * time_step * Vec2{Float64}(velocity)
-
-        p = add!(particles)
-        p.position = position
-        p.velocity = velocity
-
-    end
-    println("done adding...")
-end
-
-function set!(c::InflowCondition, altitude, velocity, species, num_threads)
-    temperature = 200 # TODO make it variable?
-    density = 1.225 * exp(-0.11856 * altitude)
-
-    set!(c, density, velocity, temperature, species, num_threads)
 end
 
 function set!(c::InflowCondition, density, velocity, temperature, species, num_threads)
@@ -44,5 +12,20 @@ function set!(c::InflowCondition, density, velocity, temperature, species, num_t
     ratio = velocity / c.most_probable_velocity
     mass_flux = 0.5 * (velocity * (erf(ratio) + 1) +
         c.most_probable_velocity / √π * exp(-(ratio)^2)) * density
-    c.number_flux = mass_flux / (num_threads * species.mass * species.weighting)
+    c.number_flux = mass_flux / (num_threads * species.mass) * species.weighting
+    c.number_flux = 10^7
+end
+
+function insert_particles(particles, mesh, inflow, time_step)
+    num_new_particles = stochastic_round(inflow.number_flux * mesh.length[2] * time_step)
+    for _ in 1:num_new_particles
+        isfull(particles) && break
+
+        p = add!(particles)
+        p.position = Point2{Float64}(0, rand() * mesh.length[2])
+        p.velocity = sample_inflow_velocity(inflow.most_probable_velocity, inflow.velocity)
+
+        # Move back for a fraction of a time step to avoid particle clumping together
+        p.position = p.position - rand() * time_step * Vec2{Float64}(p.velocity)
+    end
 end

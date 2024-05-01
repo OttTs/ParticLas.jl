@@ -1,4 +1,4 @@
-function collision_step!(mesh, time_step, species, thread_id, sim_channel, plot_type)
+function collision_step!(mesh, time_step, species, plot_type, sim_channel, thread_id)
     for index in local_indices(mesh.cells, thread_id)
         cell = mesh.cells[index]
         particles = cell.particles

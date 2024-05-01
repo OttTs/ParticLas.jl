@@ -36,7 +36,6 @@ function Base.push!(v::AllocatedVector{T}, item::T) where T
 end
 
 function add!(v::AllocatedVector)
-    v._num_items >= length(v._items) && return -1
     v._num_items += 1
     return v._items[v._num_items]
 end
@@ -120,7 +119,5 @@ Base.getindex(m::ThreadedMatrix, args...) = getindex(m._items, args...)
 Base.size(m::ThreadedMatrix) = size(m._items)
 
 local_indices(m::ThreadedMatrix, thread_id) = thread_id:m._num_threads:length(m._items)
-
-#local_items(m::ThreadedMatrix, thread_id) = @view(m._items[local_indices(m, thread_id)])
 
 Base.iterate(m::ThreadedMatrix) = iterate(m._items)

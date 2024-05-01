@@ -1,14 +1,4 @@
-#=
-The movement step is split up into 5 parts
-For each particle...
-1. Calculate the trajectory it would travel without any walls
-2. Find the next wall it hits on its trajectory
-3. Move the particle until it hits a wall
-4. If it hits a wall, perform collision and go to 1
-5. If it is not inbounds, delete the particle
-=#
-
-function movement_step!(particles, time_step, mesh, wall_condition)
+function movement_step!(particles, mesh, wall_condition, time_step)
     for index in eachindex(particles)
         particle = particles[index]
 
@@ -16,9 +6,7 @@ function movement_step!(particles, time_step, mesh, wall_condition)
         Δt = time_step
         while true
             trajectory = Line(particle.position, Vec2{Float64}(Δt * particle.velocity))
-
             wall, fraction = next_wall_hit(trajectory, mesh; last_wall=wall)
-
             particle.position += trajectory.vector * fraction
 
             if isnothing(wall)
@@ -28,7 +16,6 @@ function movement_step!(particles, time_step, mesh, wall_condition)
                 collide!(particle, wall, wall_condition)
             end
         end
-
         inbounds(particle.position, mesh) || deleteat!(particles, index)
     end
 end
@@ -37,7 +24,7 @@ function next_wall_hit(trajectory::Line, mesh::SimulationMesh; last_wall=nothing
     index_start = get_index(pointfrom(trajectory), mesh)
     index_stop = get_index(pointto(trajectory), mesh)
 
-    next_wall = nothing
+    next_wall = nothing 
     fraction = one(Float64)
 
     # Check all cells in the "bounding rectangle"
