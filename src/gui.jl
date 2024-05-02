@@ -6,7 +6,7 @@ mutable struct GUIData
     terminate::Bool
     pause::Bool
     plot_type::Symbol
-    point_scaling::Float64
+    point_scaling::NTuple{2, Float64}
     inflow_altitude::Float64
     inflow_velocity::Float64
     new_wall::NTuple{2, Point2f}
@@ -21,12 +21,12 @@ mutable struct GUIData
         return new(
             Observable(true),
             Observable(zeros(NUM_CELLS)),
-            Observable(Point2f[]),
+            Observable(zeros(Point2f, MAX_NUM_DISPLAY_PARTICLES)),#Point2f[]),
             wall_points,
             false,
             true,
             :particles,
-            1,
+            (1, 1),
             DEFAULT_ALTITUDE,
             DEFAULT_VELOCITY,
             (Point2{Float64}(NaN), Point2{Float64}(NaN)),

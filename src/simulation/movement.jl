@@ -21,10 +21,12 @@ function movement_step!(particles, mesh, wall_condition, time_step)
 end
 
 function next_wall_hit(trajectory::Line, mesh::SimulationMesh; last_wall=nothing)
-    index_start = get_index(pointfrom(trajectory), mesh)
-    index_stop = get_index(pointto(trajectory), mesh)
+    index_start, index_stop = extrema((
+        get_index(pointfrom(trajectory), mesh),
+        get_index(pointto(trajectory), mesh)
+    ))
 
-    next_wall = nothing 
+    next_wall = nothing
     fraction = one(Float64)
 
     # Check all cells in the "bounding rectangle"
@@ -58,6 +60,6 @@ function collide!(particle, wall, wall_condition)
         transform_matrix = @SMatrix [ wall.normal[1]    -wall.normal[2] 0 ;
                                       wall.normal[2]     wall.normal[1] 0 ;
                                                    0                  0 1 ]
-        v = transform_matrix * (v .* (sign(normal_velocity), 1, 1))
+        particle.velocity = -(transform_matrix * (v .* (sign(normal_velocity), 1, 1)))
     end
 end

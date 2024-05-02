@@ -31,9 +31,14 @@ function run_particlas()
     #end
     @async simulation_thread(sim_data, gui_channel, sim_channel, 1)
 
-    # Start GUI renderloop
-    #Threads.@spawn :interactive 
+
     renderloop(gui_data, gui_channel, sim_channel)
+
+
+
+    # Start GUI renderloop
+    #Threads.@spawn :interactive
+
 end
 
 end

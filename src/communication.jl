@@ -120,7 +120,7 @@ mutable struct SimulationToGUI
     mesh_values::Matrix{Float32}
 
     SimulationToGUI() = new(
-        zeros(Point2f, 10^5), # maximal number of particles
+        zeros(Point2f, MAX_NUM_DISPLAY_PARTICLES),
         zeros(Float32, NUM_CELLS)
     )
 end

@@ -1,0 +1,4 @@
+- Particles are not displayed when paused
+- Mesh variables do not work
+- Collisions currently disabled
+- Micro Stutters (it is on 1 thread currently)

@@ -9,4 +9,5 @@ using Statistics: mean, var
     include("test_statistics.jl")
     include("test_collision.jl")
     include("test_mesh.jl")
+    include("test_inflow.jl")
 end

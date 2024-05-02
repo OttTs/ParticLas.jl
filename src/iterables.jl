@@ -17,7 +17,7 @@ A standard array cannot be used since the mutable type may still be allocated!
 mutable struct AllocatedVector{T}
     _items::Vector{T}
     _num_items::Int64
-    AllocatedVector(T, max_length) = new{T}(zeros(T, max_length), 0)
+    AllocatedVector(T, max_length) = new{T}([zero(T) for i in 1:max_length], 0)
 end
 
 function Base.empty!(v::AllocatedVector)
@@ -43,7 +43,9 @@ end
 function Base.deleteat!(v::AllocatedVector, index)
     # This also changes the ordering!
     (index % UInt) > length(v) && return -1
-    v._items[index] = v._items[length(v)]
+
+    copy!(v._items[index], v._items[v._num_items])
+    #v._items[index] = v._items[v._num_items]
     v._num_items -= 1
 end
 

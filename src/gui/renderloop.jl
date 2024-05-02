@@ -21,8 +21,11 @@ function renderloop(gui_data, gui_channel, sim_channel)
         # Receive the simulation data for the new time step
         receive!(sim_channel)
         if gui_data.plot_type == :particles
-            data(sim_channel).particle_positions .*= gui_data.point_scaling
-            gui_data.particle_points[] = data(sim_channel).particle_positions
+            particle_positions = data(sim_channel).particle_positions
+            for i in eachindex(particle_positions)
+                particle_positions[i] = particle_positions[i] .* gui_data.point_scaling
+            end
+            gui_data.particle_points[] = particle_positions
         else
             gui_data.mesh_values[] = data(sim_channel).mesh_values
         end
@@ -40,14 +43,14 @@ frametime(fps) = (time_ns() / 1e9) * fps
 
 function copy_data!(channel_data, gui_data::GUIData)
     fields = (
-        :terminate, 
-        :pause, 
-        :plot_type, 
-        :inflow_altitude, 
-        :inflow_velocity, 
-        :new_wall, 
-        :accomodation_coefficient, 
-        :delete_walls, 
+        :terminate,
+        :pause,
+        :plot_type,
+        :inflow_altitude,
+        :inflow_velocity,
+        :new_wall,
+        :accomodation_coefficient,
+        :delete_walls,
         :delete_particles
     )
     for i in fields

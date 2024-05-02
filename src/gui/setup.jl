@@ -7,7 +7,7 @@ function setup_gui()
         GLFW.GetVideoMode(GLFW.GetPrimaryMonitor()).height
     )
     display_size = window_size .- (3, 2) .* BORDER_WIDTH .- (MENU_WIDTH, 0)
-    gui_data.point_scaling = display_size[2]
+    gui_data.point_scaling = display_size ./ MESH_LENGTH
 
     scene = GLMakie.Scene(size=window_size, backgroundcolor=BACKGROUND_COLOR)
     GLMakie.campixel!(scene)
@@ -260,7 +260,7 @@ function add_wall_block!(layout, gui_data, n)
 
     accomodation_slider = GLMakie.Slider(layout[n,:],
         range=0:0.01:1,
-        startvalue=0,
+        startvalue=DEFAULT_ACCOMODATION_COEFFICIENT,
         linewidth = SLIDER_LINE_WIDTH,
         snap=false,
         color_inactive=SLIDER_COLOR_RIGHT,
@@ -268,9 +268,9 @@ function add_wall_block!(layout, gui_data, n)
         color_active=SLIDER_COLOR_CIRCLE
     )
     layout[n,:] = GLMakie.hgrid!(
-        GLMakie.Label(layout[n,:], "Diffuse", fontsize=CONTENT_FONTSIZE),
+        GLMakie.Label(layout[n,:], "Specular", fontsize=CONTENT_FONTSIZE),
         accomodation_slider,
-        GLMakie.Label(layout[n,:], "Specular", fontsize=CONTENT_FONTSIZE)
+        GLMakie.Label(layout[n,:], "Diffuse", fontsize=CONTENT_FONTSIZE)
     )
 
     GLMakie.on(accomodation_slider.value) do coefficient

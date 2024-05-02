@@ -1,15 +1,3 @@
-struct Wall
-    normal::Vec2{Float64}
-    line::Line
-    function Wall(a, b)
-        v = Vec(b .- a)
-        normal = Vec(-v[2], v[1]) / norm(v)
-        return new(normal, Line(Point2{Float64}(a), v))
-    end
-end
-
-Base.zero(::Type{T}) where {T<:Wall} = Wall(zero(Point2f), zero(Point2f))
-
 struct Cell
     particles::ThreadedVector{Particle}
     walls::AllocatedVector{Wall}
@@ -54,10 +42,10 @@ inbounds(x::Point2, m::SimulationMesh) = all(0 .< x .< m.length)
 )...)
 
 function add!(m::SimulationMesh, w::Wall)
-    min_index,max_index = minmax(
+    min_index,max_index = extrema((
         get_index(pointfrom(w.line), m),
         get_index(pointto(w.line), m)
-    )
+    ))
     for index in min_index:max_index
         push!(m.cells[index].walls, w)
     end

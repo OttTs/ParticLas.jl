@@ -295,9 +295,9 @@ Scene
         #color_active=SLIDER_COLOR_CIRCLE
     )
     layout[5,:] = hgrid!(
-        Label(layout[5,:], WALL_DIFFUSE_LABEL, fontsize=CONTENT_FONTSIZE),
+        Label(layout[5,:], WALL_SPECULAR_LABEL, fontsize=CONTENT_FONTSIZE),
         accomodation_slider,
-        Label(layout[5,:], WALL_SPECULAR_LABEL, fontsize=CONTENT_FONTSIZE)
+        Label(layout[5,:], WALL_DIFFUSE_LABEL, fontsize=CONTENT_FONTSIZE)
     )
 
     # -------------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 include("simulation/species.jl")
 include("simulation/particles.jl")
 include("simulation/statistics.jl")
-include("simulation/wall_condition.jl")
+include("simulation/wall.jl")
 include("simulation/mesh.jl")
 include("simulation/collision_operator.jl")
 include("simulation/inflow.jl")
@@ -21,7 +21,7 @@ function setup_simulation()
     num_sim_threads = Threads.nthreads(:default)
     return SimulationData(
         ThreadedVector(Particle, 10^6, num_sim_threads),
-        Species(1E15, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10),
+        Species(2E16, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10),
         SimulationMesh(MESH_LENGTH, NUM_CELLS, num_sim_threads),
         InflowCondition(),
         WallCondition(),
@@ -35,35 +35,37 @@ function simulation_thread(simulation_data, gui_channel, sim_channel, thread_id)
     while !data(gui_channel).terminate
         if !data(gui_channel).pause
             insert_particles(
-                particles, 
+                particles,
                 simulation_data.mesh,
                 simulation_data.inflow,
                 simulation_data.time_step
             ) # ✓
 
             movement_step!(
-                particles, 
+                particles,
                 simulation_data.mesh,
                 simulation_data.wall_condition,
                 simulation_data.time_step
             ) # ✓
 
             deposit!(particles, simulation_data.mesh, thread_id)
+
             send_particle_data!(particles, gui_channel, sim_channel, thread_id)
+
             synchronize!(simulation_data.thread_barrier)
 
             #=
             collision_step!(
                 simulation_data.mesh,
                 simulation_data.time_step,
-                simulation_data.species, 
+                simulation_data.species,
                 data(gui_channel).plot_type,
-                sim_channel, 
+                sim_channel,
                 thread_id
             )
             =#
         end
-        !data(gui_channel).delete_walls && delete_walls!(simulation_data.mesh, thread_id)
+        data(gui_channel).delete_walls && delete_walls!(simulation_data.mesh, thread_id)
         synchronize!(simulation_data.thread_barrier)
 
         if thread_id == 1
@@ -73,7 +75,7 @@ function simulation_thread(simulation_data, gui_channel, sim_channel, thread_id)
         end
 
         synchronize!(simulation_data.thread_barrier)
-        !data(gui_channel).delete_particles && empty!(particles)
+        data(gui_channel).delete_particles && empty!(particles)
     end
 end
 
@@ -94,7 +96,7 @@ function send_particle_data!(particles, gui_channel, sim_channel, thread_id)
     if data(gui_channel).plot_type == :particles
         set!(sim_channel) do data
             index = 0
-            for i in thread_id:Threads.nthreads():length(data.particle_positions)
+            for i in thread_id:Threads.nthreads(:default):length(data.particle_positions)
                 index += 1
                 index > length(particles) && break
                 data.particle_positions[i] = particles[index].position
@@ -114,13 +116,12 @@ function update_simulation_data!(simulation_data, gui_channel)
         density,
         data(gui_channel).inflow_velocity,
         200, # TODO inflow temperature?
-        simulation_data.species,
-        Threads.nthreads()
+        simulation_data.species
     )
 
     set!(
-        simulation_data.wall_condition, 
-        data(gui_channel).accomodation_coefficient, 
+        simulation_data.wall_condition,
+        data(gui_channel).accomodation_coefficient,
         simulation_data.species
     )
 end
