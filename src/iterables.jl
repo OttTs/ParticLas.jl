@@ -28,6 +28,7 @@ isfull(v::AllocatedVector) = v._num_items >= length(v._items)
 
 Base.length(v::AllocatedVector) = v._num_items
 
+# TODO make it more clear what the difference is between add! and push!
 function Base.push!(v::AllocatedVector{T}, item::T) where T
     v._num_items >= length(v._items) && return -1
     v._num_items += 1
@@ -122,4 +123,4 @@ Base.size(m::ThreadedMatrix) = size(m._items)
 
 local_indices(m::ThreadedMatrix, thread_id) = thread_id:m._num_threads:length(m._items)
 
-Base.iterate(m::ThreadedMatrix) = iterate(m._items)
+Base.iterate(m::ThreadedMatrix, args...) = iterate(m._items, args...)

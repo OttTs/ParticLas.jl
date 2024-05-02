@@ -15,7 +15,13 @@ function collision_step!(mesh, time_step, species, plot_type, sim_channel, threa
         # Send mesh data to plot
         if plot_type != :particles
             set!(sim_channel) do data
-                data.mesh_values[index] = norm(eval(plot_type)) # ρ
+                if plot_type == :ρ
+                    data.mesh_values[index] = ρ
+                elseif plot_type == :u
+                    data.mesh_values[index] = norm(u)
+                else
+                    data.mesh_values[index] = T
+                end
             end
         end
     end
@@ -29,6 +35,8 @@ function relax!(particles, P, u, σ)
 end
 
 function conservation_step!(particles, u, σ²)
+    σ² == 0 && return nothing
+
     _, uₙ, σₙ² = sample_moments(particles)
 
     ratio = √(σ² / σₙ²)
@@ -44,8 +52,8 @@ function sample_moments(particles)
     ∑v² = sum(p.velocity ⋅ p.velocity for p in particles; init=0)
     ∑c² = ∑v² - ∑v ⋅ ∑v / N
 
-    mean = ∑v / N
-    variance = ∑c² / (3(N - 1))
+    mean = N > 0 ? ∑v / N : 0
+    variance = N > 1 ? ∑c² / (3(N - 1)) : 0
     return N, mean, variance
 end
 
@@ -55,6 +63,7 @@ function collision_probability(ρ, T, Δt, species)
 end
 
 function relaxation_frequency(ρ, T, species)
+    T == 0 && return 0
     m = species.mass
     μ = dynamic_viscosity(
         T,

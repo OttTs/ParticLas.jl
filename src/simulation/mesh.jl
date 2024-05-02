@@ -51,11 +51,11 @@ function add!(m::SimulationMesh, w::Wall)
     end
 end
 
-function delete_particles!(m::SimulationMesh, thread_id)
-    # Attention! Deletes the Lists for all threads! Only call in collision step!
-    for i in local_indices(m.cells, thread_id)
-        cell = m.cells[i]
-        empty!(cell.particles)
+function reset_particles!(m::SimulationMesh, thread_id)
+    # Needed before depo!
+    for cell in m.cells
+        local_particles = local_vector(cell.particles, thread_id)
+        empty!(local_particles)
     end
 end
 

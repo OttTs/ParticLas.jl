@@ -20,14 +20,16 @@ function renderloop(gui_data, gui_channel, sim_channel)
 
         # Receive the simulation data for the new time step
         receive!(sim_channel)
-        if gui_data.plot_type == :particles
-            particle_positions = data(sim_channel).particle_positions
-            for i in eachindex(particle_positions)
-                particle_positions[i] = particle_positions[i] .* gui_data.point_scaling
+        if !gui_data.pause
+            if gui_data.plot_type == :particles
+                particle_positions = data(sim_channel).particle_positions
+                for i in eachindex(particle_positions)
+                    particle_positions[i] = particle_positions[i] .* gui_data.point_scaling
+                end
+                gui_data.particle_points[] = particle_positions
+            else
+                gui_data.mesh_values[] = data(sim_channel).mesh_values
             end
-            gui_data.particle_points[] = particle_positions
-        else
-            gui_data.mesh_values[] = data(sim_channel).mesh_values
         end
 
         # Wait for the rest of the frame

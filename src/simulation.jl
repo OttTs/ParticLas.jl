@@ -54,7 +54,6 @@ function simulation_thread(simulation_data, gui_channel, sim_channel, thread_id)
 
             synchronize!(simulation_data.thread_barrier)
 
-            #=
             collision_step!(
                 simulation_data.mesh,
                 simulation_data.time_step,
@@ -63,7 +62,6 @@ function simulation_thread(simulation_data, gui_channel, sim_channel, thread_id)
                 sim_channel,
                 thread_id
             )
-            =#
         end
         data(gui_channel).delete_walls && delete_walls!(simulation_data.mesh, thread_id)
         synchronize!(simulation_data.thread_barrier)
@@ -85,6 +83,7 @@ Here, the particles are added to the list of particles in each cell.
 This is done for the collision step, where each cell needs to know its particles.
 =#
 function deposit!(particles, mesh, thread_id)
+    reset_particles!(mesh, thread_id)
     for particle in particles
         index = get_index(particle.position, mesh)
         particles_in_cell = local_vector(mesh.cells[index].particles, thread_id)

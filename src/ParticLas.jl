@@ -26,19 +26,12 @@ function run_particlas()
     sim_channel = DataChannel(SimulationToGUI)
 
     # Add simulation threads
-    #for thread_id in 1:Threads.nthreads()
-    #    Threads.@spawn simulation_thread(sim_data, gui_channel, sim_channel, thread_id)
-    #end
-    @async simulation_thread(sim_data, gui_channel, sim_channel, 1)
-
-
-    renderloop(gui_data, gui_channel, sim_channel)
-
-
+    for thread_id in 1:Threads.nthreads()
+        Threads.@spawn simulation_thread(sim_data, gui_channel, sim_channel, thread_id)
+    end
 
     # Start GUI renderloop
-    #Threads.@spawn :interactive
-
+    Threads.@spawn :interactive renderloop(gui_data, gui_channel, sim_channel)
 end
 
 end
