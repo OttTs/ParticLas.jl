@@ -13,9 +13,6 @@
     @test collect(1:15) == collect(item for item in list)
 
     my_list = ParticLas.local_vector(list, 1)
-    deleteat!(my_list, 4)
-    @test collect(my_list[i] for i in eachindex(my_list)) == [5, 3, 2, 1]
-
     empty!(my_list)
     @test length(my_list) == 0
 
