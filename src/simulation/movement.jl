@@ -4,7 +4,7 @@ function movement_step!(particles, mesh, wall_condition, time_step)
 
         wall = nothing
         Δt = time_step
-        while true
+        for _ in 1:1000 # Tunneling happens a lot somehow... while true
             trajectory = Line(particle.position, Vec2{Float64}(Δt * particle.velocity))
             next_crossing = next_wall_hit(trajectory, mesh; last_wall=wall)
 

@@ -74,7 +74,7 @@ function receive!(c::DataChannel)
     lock(c._condition) do
         # Wait for sender to complete
         while c._requested
-            wait(c._condition, first=true)
+            wait(c._condition, first=true) # This allocates...
         end
 
         # Swap sender data and receiver data!
@@ -118,9 +118,11 @@ end
 mutable struct SimulationToGUI
     particle_positions::Vector{Point2f}
     mesh_values::Matrix{Float32}
+    timing_data::TimingData
 
     SimulationToGUI() = new(
         zeros(Point2f, MAX_NUM_DISPLAY_PARTICLES),
-        zeros(Float32, NUM_CELLS)
+        zeros(Float32, NUM_CELLS),
+        TimingData()
     )
 end

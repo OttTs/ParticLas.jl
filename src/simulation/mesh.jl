@@ -29,17 +29,19 @@ inbounds(index, m::SimulationMesh) = checkbounds(Bool, m.cells._items, index)
 
 inbounds(x::Point2, m::SimulationMesh) = all(0 .< x .< m.length)
 
-@inline get_index(x, m::SimulationMesh) = CartesianIndex((
-    begin
-        r = x[i]
-        index = 0
-        while r > 0
-            index += 1
-            r -= cellsize(m)[i]
-        end
-        index
-    end for i in 1:2
-)...)
+@inline get_index(x, m::SimulationMesh) = CartesianIndex(ceil.(Int, x ./ cellsize(m))...)
+#@inline get_index(x, m::SimulationMesh) = CartesianIndex((
+#    begin
+#        r = x[i]
+#        index = 0
+#        while r > 0
+#            index += 1
+#            r -= cellsize(m)[i]
+#        end
+#        index
+#    end for i in 1:2
+#)...)
+
 
 function add!(m::SimulationMesh, w::Wall)
     min_index,max_index = extrema((

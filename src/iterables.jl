@@ -32,7 +32,7 @@ Base.length(v::AllocatedVector) = v._num_items
 function Base.push!(v::AllocatedVector{T}, item::T) where T
     v._num_items >= length(v._items) && return -1
     v._num_items += 1
-    v._items[v._num_items] = item
+    @inbounds v._items[v._num_items] = item
     return 1
 end
 
@@ -45,7 +45,7 @@ function Base.deleteat!(v::AllocatedVector, index)
     # This also changes the ordering!
     (index % UInt) > length(v) && return -1
 
-    copy!(v._items[index], v._items[v._num_items])
+    @inbounds copy!(v._items[index], v._items[v._num_items])
     #v._items[index] = v._items[v._num_items]
     v._num_items -= 1
 end

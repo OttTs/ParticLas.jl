@@ -13,6 +13,7 @@ mutable struct GUIData
     accomodation_coefficient::Float64
     delete_walls::Bool
     delete_particles::Bool
+    timing_data::TimingData
     screen::GLMakie.Screen{GLFW.Window}
 
     function GUIData()
@@ -32,7 +33,8 @@ mutable struct GUIData
             (Point2{Float64}(NaN), Point2{Float64}(NaN)),
             DEFAULT_ACCOMODATION_COEFFICIENT,
             false,
-            false
+            false,
+            TimingData()
         )
     end
 end

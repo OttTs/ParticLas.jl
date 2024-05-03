@@ -54,7 +54,7 @@ function setup_display(scene, gui_data; pos, size)
     # 2. Scatter plot for particles
     GLMakie.scatter!(display_scene, gui_data.particle_points;
         marker = GLMakie.FastPixel(),
-        markersize = 2,
+        markersize = 4,#2,
         color = :black, # TODO color with velocity?
         visible = gui_data.display_particles
     )
@@ -184,10 +184,10 @@ function add_logo!(scene, settings_bbox, layout, n)
     origin = settings_bbox.origin
     widths = settings_bbox.widths
 
-    logo_size = 50
+    logo_size = 100
     logo = GLMakie.load("src/gui/logo.png")
     img = GLMakie.image!(scene,
-        (origin[1] + widths[1]÷2) .+ (-2 * logo_size, 2 * logo_size),
+        (origin[1] + widths[1]÷2) .+ (-0.5 * logo_size, 0.5 * logo_size),
         origin[2] - BORDER_WIDTH + widths[2] .+ (-logo_size, 0),
         GLMakie.rotr90(logo)
     )

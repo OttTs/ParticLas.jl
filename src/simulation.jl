@@ -34,21 +34,29 @@ function simulation_thread(simulation_data, gui_channel, sim_channel, thread_id)
     particles = local_vector(simulation_data.particles, thread_id)
     while !data(gui_channel).terminate
         if !data(gui_channel).pause
+            if thread_id == 1
+                out = sender_data(sim_channel).timing_data
+                out.sim_start = frametime()
+            end
+
             insert_particles(
                 particles,
                 simulation_data.mesh,
                 simulation_data.inflow,
                 simulation_data.time_step
-            ) # ✓
+            )
+            thread_id == 1 && (out.insertion = frametime())
 
             movement_step!(
                 particles,
                 simulation_data.mesh,
                 simulation_data.wall_condition,
                 simulation_data.time_step
-            ) # ✓
+            )
+            thread_id == 1 && (out.movement = frametime())
 
             deposit!(particles, simulation_data.mesh, thread_id)
+            thread_id == 1 && (out.deposition = frametime())
 
             send_particle_data!(particles, gui_channel, sim_channel, thread_id)
 
@@ -62,6 +70,7 @@ function simulation_thread(simulation_data, gui_channel, sim_channel, thread_id)
                 sim_channel,
                 thread_id
             )
+            thread_id == 1 && (out.collision = frametime())
         end
         data(gui_channel).delete_walls && delete_walls!(simulation_data.mesh, thread_id)
         synchronize!(simulation_data.thread_barrier)

@@ -63,7 +63,7 @@ function collision_probability(ρ, T, Δt, species)
 end
 
 function relaxation_frequency(ρ, T, species)
-    T == 0 && return 0
+    T <= 0 && return 0
     m = species.mass
     μ = dynamic_viscosity(
         T,

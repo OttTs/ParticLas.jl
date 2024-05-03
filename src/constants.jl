@@ -40,5 +40,5 @@ const BUTTON_COLOR_INACTIVE = RGBf(rand(3)...)
 const BUTTON_COLOR_ACTIVE = RGBf(rand(3)...)
 const BUTTON_COLOR_HOVER = RGBf(rand(3)...)
 
-const FPS = 120
+const FPS = 60
 const BOLTZMANN_CONST = 1.380649E-23
