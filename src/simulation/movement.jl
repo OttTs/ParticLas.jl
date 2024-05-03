@@ -6,12 +6,14 @@ function movement_step!(particles, mesh, wall_condition, time_step)
         Δt = time_step
         while true
             trajectory = Line(particle.position, Vec2{Float64}(Δt * particle.velocity))
-            wall, fraction = next_wall_hit(trajectory, mesh; last_wall=wall)
-            particle.position += trajectory.vector * fraction
+            next_crossing = next_wall_hit(trajectory, mesh; last_wall=wall)
 
-            if isnothing(wall)
+            if isnothing(next_crossing)
+                particle.position += trajectory.vector
                 break
             else
+                wall, fraction = next_crossing
+                particle.position += trajectory.vector * fraction
                 Δt *= (1 - fraction)
                 collide!(particle, wall, wall_condition)
             end
@@ -45,6 +47,7 @@ function next_wall_hit(trajectory::Line, mesh::SimulationMesh; last_wall=nothing
         end
     end
 
+    isnothing(next_wall) && return nothing
     return next_wall, fraction
 end
 
