@@ -51,7 +51,7 @@ function renderloop(gui_data, gui_channel, sim_channel)
         while frametime() - starttime < 1; end
     end
     GLFW.make_windowed!(gui_data.screen.glscreen)
-    close(gui_data.screen; reuse=false)
+    GLFW.close(gui_data.screen; reuse=false)
 end
 
 function copy_data!(channel_data, gui_data::GUIData)

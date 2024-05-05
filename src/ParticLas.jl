@@ -9,7 +9,6 @@ using LinearAlgebra
 using StaticArrays: @SMatrix
 using SpecialFunctions: erf
 using Printf: @sprintf
-
 import PackageCompiler
 
 mutable struct TimingData
@@ -43,6 +42,7 @@ Use the optional argument `dst` to specify the path of the compiled app.
 
 # Examples
 ```julia-repl
+julia> create_app()
 julia> create_app("/home/myuser/ParticLasApp")
 julia> create_app("C:\\Program Files\\ParticLasApp")
 ```
@@ -50,8 +50,11 @@ julia> create_app("C:\\Program Files\\ParticLasApp")
 function create_app(dst=nothing)
     pkg_path = string(split(pathof(ParticLas), "src")[1])
     isnothing(dst) && (dst = string(pkg_path, "ParticLasApp"))
-    PackageCompiler.create_app(pkg_path, dst, include_lazy_artifacts=true)
-    # TODO Precompilation script!
+    PackageCompiler.create_app(pkg_path, dst, 
+        precompile_execution_file="precompile.jl",
+        include_lazy_artifacts=true,
+        force=true
+    )
 end
 
 # TODO num_threads is given by Threads.nthreads(:default)
@@ -62,7 +65,6 @@ function julia_main()::Cint
 end
 
 function run_particlas()
-    gui_data = setup_gui()
     sim_data = setup_simulation()
 
     gui_channel = DataChannel(GUIToSimulation)
@@ -82,8 +84,9 @@ function run_particlas()
         end
     end
 
-    # Start GUI renderloop
-    Threads.@spawn :interactive try 
+    # Start GUI renderloop (Threads.@spawn :interactive)
+    try 
+        gui_data = setup_gui()
         renderloop(gui_data, gui_channel, sim_channel)
     catch e
         io = open("gui.error", "w")

@@ -22,7 +22,7 @@ function setup_gui()
         size=(MENU_WIDTH, display_size[2])
     )
 
-    gui_data.screen = GLMakie.Screen(scene, start_renderloop=false)
+    gui_data.screen = GLMakie.Screen(scene, start_renderloop=false, focus_on_show=true)
     GLFW.make_fullscreen!(gui_data.screen.glscreen)
     GLFW.SwapInterval(1) # 0?
 
