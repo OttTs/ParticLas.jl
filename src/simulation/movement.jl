@@ -1,4 +1,4 @@
-function movement_step!(particles, mesh, wall_condition, time_step)
+function movement_step!(particles, mesh, time_step)
     for index in eachindex(particles)
         particle = particles[index]
 
@@ -15,7 +15,7 @@ function movement_step!(particles, mesh, wall_condition, time_step)
                 wall, fraction = next_crossing
                 particle.position += trajectory.vector * fraction
                 Δt *= (1 - fraction)
-                collide!(particle, wall, wall_condition)
+                collide!(particle, wall, mesh.wall_condition)
             end
         end
         inbounds(particle.position, mesh) || deleteat!(particles, index)

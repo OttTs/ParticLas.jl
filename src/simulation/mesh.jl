@@ -1,68 +1,63 @@
-struct Cell
-    particles::ThreadedVector{Particle}
-    walls::AllocatedVector{Wall}
-    function Cell(num_threads)
-        max_num_items = 10^3
-        walls = AllocatedVector(Wall, max_num_items)
-        return new(ThreadedVector(Particle, max_num_items, num_threads), walls)
+mutable struct RawMoments
+    v⁰::Int64
+    v¹::Vec3{Float64}
+    v²::Float64
+    RawMoments() = new(0, 0, 0)
+end
+
+mutable struct Cell
+    raw_moments::Vector{RawMoments}
+    relaxation_probability::Float64
+    bulk_velocity::Float64
+    scale_parameter::Float64
+    tmp_bulk_velocity::Float64
+    conservation_ratio::Float64
+    walls::Vector{Wall} # TODO We may use an "AllocatedVector"
+    function Cell()
+        walls = Wall[]
+        sizehint!(walls, 1000)
+        return new(
+            [RawMoments() for _ in 1:Threads.nthreads(:default)], 0, 0, 0, 0, 0, walls
+        )
     end
 end
 
-Base.zero(::Type{T}, num_threads) where {T<:Cell} = Cell(num_threads)
+Base.zero(::Type{T}) where {T<:Cell} = Cell()
 
-struct SimulationMesh
+struct Mesh
     length::NTuple{2,Float64}
-    cells::ThreadedMatrix{Cell}
-    function SimulationMesh(length, num_cells, num_threads)
-        cells = ThreadedMatrix(Cell, num_cells, num_threads; args=num_threads)
-        return new(length, cells)
-    end
+    cells::Matrix{Cell}
+    inflow_condition::InflowCondition
+    wall_condition::WallCondition
+    Mesh(length, numcells) = new(
+        length,
+        zeros(Cell, numcells),
+        InflowCondition(),
+        WallCondition()
+    )
 end
 
-cellsize(m::SimulationMesh) = m.length./num_cells(m)
+cellsize(m::Mesh) = m.length .numcells/ (m)
+cellvolume(m::Mesh) = prod(cellsize(m))
+numcells(m::Mesh) = size(m.cells)
+inbounds(index, m::Mesh) = checkbounds(Bool, m.cells, index)
+inbounds(x::Point2, m::Mesh) = all(0 .< x .< m.length)
+index(x, m::Mesh) = CartesianIndex(ceil.(Int, x./ cellsize(m))...)
+boundingbox(l::Line, m::Mesh) = extrema(index.(points(l), m))
 
-cellvolume(m::SimulationMesh) = prod(cellsize(m))
+Base.eachindex(m::Matrix, threadid) = (
+    @inline(); threadid:Threads.nthreads(:default):length(m)
+)
 
-num_cells(m::SimulationMesh) = size(m.cells)
-
-inbounds(index, m::SimulationMesh) = checkbounds(Bool, m.cells._items, index)
-
-inbounds(x::Point2, m::SimulationMesh) = all(0 .< x .< m.length)
-
-@inline get_index(x, m::SimulationMesh) = CartesianIndex(ceil.(Int, x ./ cellsize(m))...)
-#@inline get_index(x, m::SimulationMesh) = CartesianIndex((
-#    begin
-#        r = x[i]
-#        index = 0
-#        while r > 0
-#            index += 1
-#            r -= cellsize(m)[i]
-#        end
-#        index
-#    end for i in 1:2
-#)...)
-
-
-function add!(m::SimulationMesh, w::Wall)
-    min_index,max_index = extrema((
-        get_index(pointfrom(w.line), m),
-        get_index(pointto(w.line), m)
-    ))
-    for index in min_index:max_index
+function add!(m::Mesh, w::Wall)
+    imin, imax = boundingbox(w.line, m)
+    for index in imin:imax
         push!(m.cells[index].walls, w)
     end
 end
 
-function reset_particles!(m::SimulationMesh, thread_id)
-    # Needed before depo!
-    for cell in m.cells
-        local_particles = local_vector(cell.particles, thread_id)
-        empty!(local_particles)
-    end
-end
-
-function delete_walls!(m::SimulationMesh, thread_id)
-    for i in local_indices(m.cells, thread_id)
+function delete_walls!(m::Mesh, thread_id)
+    for i in eachindex(m.cells, thread_id)
         cell = m.cells[i]
         empty!(cell.walls)
     end

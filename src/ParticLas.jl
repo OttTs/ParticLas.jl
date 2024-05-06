@@ -26,8 +26,6 @@ mutable struct TimingData
 end
 
 include("constants.jl")
-include("geometry.jl")
-include("iterables.jl")
 include("communication.jl")
 include("simulation.jl")
 include("gui.jl")
@@ -35,19 +33,26 @@ include("gui.jl")
 # TODO num_threads is given by Threads.nthreads(:default)
 
 function run_particlas()
-    gui_data = setup_gui()
-    sim_data = setup_simulation()
+    mesh, species, time_step, barrier = setup_simulation()
 
-    gui_channel = DataChannel(GUIToSimulation)
-    sim_channel = DataChannel(SimulationToGUI)
+    channel = SwapChannel(GUIToSimulation)
 
     # For the timing output:
     print(prod("\n" for i in 1:20))
 
     # Add simulation threads
-    for thread_id in 1:Threads.nthreads()
-        Threads.@spawn try 
-            simulation_thread(sim_data, gui_channel, sim_channel, thread_id)
+    for threadid in 1:Threads.nthreads()
+        Threads.@spawn :default try
+            particles = AllocatedVector(Particle, MAX_NUM_THREAD_PARTICLES)
+            simulation_thread(
+                particles,
+                mesh,
+                species,
+                time_step,
+                barrier,
+                channel,
+                threadid
+            )
         catch e
             io = open(string(thread_id, "_sim.error"), "w")
             showerror(io, e, catch_backtrace())
@@ -56,8 +61,10 @@ function run_particlas()
     end
 
     # Start GUI renderloop
-    Threads.@spawn :interactive try 
-        renderloop(gui_data, gui_channel, sim_channel)
+    #Threads.@spawn :interactive
+    try
+        gui_data = setup_gui()
+        renderloop(gui_data, channel)
     catch e
         io = open("gui.error", "w")
         showerror(io, e, catch_backtrace())

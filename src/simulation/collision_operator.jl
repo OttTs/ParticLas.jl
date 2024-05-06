@@ -1,59 +1,72 @@
-function collision_step!(mesh, time_step, species, plot_type, sim_channel, thread_id)
-    for index in local_indices(mesh.cells, thread_id)
-        cell = mesh.cells[index]
-        particles = cell.particles
-
-        N, u, σ² = sample_moments(particles)
-
-        ρ = density(N, species, mesh)
-        T = temperature(σ², species)
-        P = collision_probability(ρ, T, time_step, species)
-
-        relax!(particles, P, u, √σ²)
-        conservation_step!(particles, u, σ²)
-
-        # Send mesh data to plot
-        if plot_type != :particles
-            set!(sim_channel) do data
-                if plot_type == :ρ
-                    data.mesh_values[index] = ρ
-                elseif plot_type == :u
-                    data.mesh_values[index] = norm(u)
-                else
-                    data.mesh_values[index] = T
-                end
-            end
-        end
+function sum_up_particles!(particles, mesh, threadid)
+    # Reset moments
+    for i in eachindex(mesh.cells, threadid)
+        ∑ₚ = mesh.cells[i].raw_moments[threadid]
+        ∑ₚ.v⁰ = 0
+        ∑ₚ.v¹ = 0
+        ∑ₚ.v² = 0
     end
-end
 
-function relax!(particles, P, u, σ)
+    # Calculate new moments
     for p in particles
-        rand() > P && continue
-        p.velocity = u + σ * randn(typeof(p.velocity))
+        ∑ₚ = mesh.cells[p.index].raw_moments[threadid]
+        ∑ₚ.v⁰ += 1
+        ∑ₚ.v¹ += p.velocity
+        ∑ₚ.v² += p.velocity ⋅ p.velocity
     end
 end
 
-function conservation_step!(particles, u, σ²)
-    σ² == 0 && return nothing
+function relaxation_parameters!(mesh, species, time_step, threadid)
+    for i in eachindex(mesh.cells, threadid)
+        cell = mesh.cells[i]
 
-    _, uₙ, σₙ² = sample_moments(particles)
+        N, cell.bulk_velocity, σ² = calculate_moments(cell.raw_moments)
 
-    ratio = √(σ² / σₙ²)
+        cell.scale_parameter = √σ²
 
+        # We only need the density and temperature for the visualization!
+        cell.density = density(N, species, mesh)
+        cell.temperature = temperature(σ², species)
+        cell.relaxation_probability = relaxation_probability(
+            cell.density, cell.temperature, time_step, species
+        )
+    end
+end
+
+function relax_particles!(particles, mesh)
     for p in particles
-        p.velocity = u + ratio * (p.velocity - uₙ)
+        cell = mesh.cells[p.index]
+        rand() > cell.relaxation_probability && continue
+        p.velocity = cell.bulk_velocity + cell.scale_parameter * randn(typeof(p.velocity))
     end
 end
 
-function sample_moments(particles)
-    N = length(particles)
-    ∑v = sum(p.velocity for p in particles; init=zero(Vec3{Float64}))
-    ∑v² = sum(p.velocity ⋅ p.velocity for p in particles; init=0)
+function conservation_parameters!(mesh, threadid)
+    for i in eachindex(mesh.cells, threadid)
+        cell = mesh.cells[i]
+        _, cell.tmp_bulk_velocity, σ² = calculate_moments(cell.raw_moments)
+        cell.conservation_ratio = cell.scale_parameter / √(σ²)
+    end
+end
+
+function conservation_step!(particles, mesh)
+    for p in particles
+        cell = mesh.cells[p.index]
+        p.velocity = cell.bulk_velocity +
+            cell.conservation_ratio * (p.velocity - cell.tmp_bulk_velocity)
+    end
+end
+
+function calculate_moments(raw_moments)
+    N = sum(∑ₚ.v⁰ for ∑ₚ in raw_moments)
+    ∑v = sum(∑ₚ.v⁰ for ∑ₚ in raw_moments)
+    ∑v² = sum(∑ₚ.v⁰ for ∑ₚ in raw_moments)
+
+    N < 1 && return N, zeros(typeof(∑v)), 0
     ∑c² = ∑v² - ∑v ⋅ ∑v / N
-
-    mean = N > 0 ? ∑v / N : 0
-    variance = N > 1 ? ∑c² / (3(N - 1)) : 0
+    mean = ∑v / N
+    N < 2 && return N, mean, 0
+    variance = ∑c² / (3(N - 1))
     return N, mean, variance
 end
 

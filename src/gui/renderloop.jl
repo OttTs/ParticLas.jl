@@ -1,4 +1,4 @@
-function renderloop(gui_data, gui_channel, sim_channel)
+function renderloop(gui_data, channel)
     while !gui_data.terminate[]
         starttime = frametime()
 
@@ -15,28 +15,25 @@ function renderloop(gui_data, gui_channel, sim_channel)
         GLFW.SwapBuffers(gui_data.screen.glscreen)
         gui_data.timing_data.rendering = frametime()
 
-        # Send the gui data
-        copy_data!(sender_data(gui_channel), gui_data)
-        send!(gui_channel)
-
-        # Receive the simulation data for the new time step
-        receive!(sim_channel)
+        # Send and receive the data
+        copy_data!(guidata(channel), gui_data)
+        swap!(channel)
         gui_data.timing_data.communication = frametime()
         if !gui_data.pause
             if gui_data.plot_type == :particles
-                particle_positions = data(sim_channel).particle_positions
+                particle_positions = guidata(channel).particle_positions
                 for i in eachindex(particle_positions)
                     particle_positions[i] = particle_positions[i] .* gui_data.point_scaling
                 end
                 gui_data.particle_points[] = particle_positions
             else
-                gui_data.mesh_values[] = data(sim_channel).mesh_values
+                gui_data.mesh_values[] = guidata(channel).mesh_values
             end
 
             # Timing
             for field in [:sim_start, :insertion, :movement, :deposition, :collision]
-                setfield!(gui_data.timing_data, field, 
-                    getfield(data(sim_channel).timing_data, field)
+                setfield!(gui_data.timing_data, field,
+                    getfield(guidata(channel).timing_data, field)
                 )
             end
         end
