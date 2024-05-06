@@ -70,7 +70,7 @@ function calculate_moments(raw_moments)
     return N, mean, variance
 end
 
-function collision_probability(ρ, T, Δt, species)
+function relaxation_probability(ρ, T, Δt, species)
     ν = relaxation_frequency(ρ, T, species)
     return 1 - exp(-Δt * ν)
 end

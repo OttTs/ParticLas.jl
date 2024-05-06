@@ -13,6 +13,12 @@ Base.zero(::Type{T}) where {T<:Particle} = Particle(
     zero(Point2{Float64}), zero(Vec3{Float64}), zero(CartesianIndex{2})
 )
 
+function Base.copy!(dst::Particle, src::Particle)
+    dst.position = src.position
+    dst.velocity = src.velocity
+    dst.index = src.index
+end
+
 #=
 The thread-local particle vectors are preallocated with their maximum number of particles.
 For this, a type "AllocatedVector" is defined.
@@ -38,7 +44,7 @@ function additem!(v::AllocatedVector)
 end
 
 function Base.deleteat!(v::AllocatedVector, index)
-    v._items[index] = v._items[v._num_items]
+    copy!(v._items[index], v._items[v._num_items])
     v._num_items -= 1
 end
 

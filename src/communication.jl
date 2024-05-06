@@ -86,3 +86,9 @@ mutable struct CommunicationData
         TimingData()
     )
 end
+
+function raise_error(c::Union{Barrier, SwapChannel})
+    lock(c._condition) do
+        notify(c._condition; error=true)
+    end
+end

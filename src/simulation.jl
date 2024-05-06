@@ -20,7 +20,7 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
     # todo inflow and wall_condition is in mesh
     while !simdata(channel).terminate
         if !simdata(channel).pause
-            if thread_id == 1
+            if threadid == 1
                 timing = simdata(channel).timing_data
                 timing.sim_start = frametime()
             end
@@ -30,30 +30,23 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
             insert_particles!(particles, mesh, time_step)
             movement_step!(particles, mesh, time_step)
             sum_up_particles!(particles, mesh, threadid)
-
             synchronize!(barrier)
-            thread_id == 1 && (timing.movement = frametime())
-
+            threadid == 1 && (timing.movement = frametime())
             #------------------------------------------------------------------------------
             # Collision Step
             relaxation_parameters!(mesh, species, time_step, threadid)
-
             synchronize!(barrier)
-            thread_id == 1 && (timing.relax_parameters = frametime())
-
+            threadid == 1 && (timing.relax_parameters = frametime())
             relax_particles!(particles, mesh)
             sum_up_particles!(particles, mesh, threadid)
-
             synchronize!(barrier)
-            thread_id == 1 && (timing.relax = frametime())
-
+            threadid == 1 && (timing.relax = frametime())
             conservation_parameters!(mesh, threadid)
 
             synchronize!(barrier)
-            thread_id == 1 && (timing.conservation_parameters = frametime())
-
+            threadid == 1 && (timing.conservation_parameters = frametime())
             conservation_step!(particles, mesh)
-            thread_id == 1 && (timing.conservation = frametime())
+            threadid == 1 && (timing.conservation = frametime())
             #------------------------------------------------------------------------------
         end
 
@@ -73,11 +66,14 @@ end
 
 function send_data!(particles, mesh, channel, threadid)
     data = simdata(channel)
-    if data.plot_type == :particles
+    if data.plot_type == :particles && threadid==1
         step = floor(Int, Threads.nthreads(:default) * maxlength(particles) /
             length(data.particle_positions))
         index = threadid
-        for i in 1:step:length(particles)
+        for i in 1:1:length(particles)
+            if index > length(data.particle_positions)
+                break
+            end
             data.particle_positions[index] = particles[i].position
             index += threadid
         end
@@ -96,7 +92,7 @@ end
 
 function update_simulation_data!(mesh, species, channel)
     if !any(isnan.(simdata(channel).new_wall))
-        add!(simulation_data.mesh, Wall(simdata(channel).new_wall...))
+        add!(mesh, Wall(simdata(channel).new_wall...))
     end
 
     density = 1.225 * exp(-0.11856 * simdata(channel).inflow_altitude)

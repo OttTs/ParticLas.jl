@@ -8,7 +8,9 @@ end
 mutable struct Cell
     raw_moments::Vector{RawMoments}
     relaxation_probability::Float64
+    density::Float64
     bulk_velocity::Vec3{Float64}
+    temperature::Float64
     scale_parameter::Float64
     tmp_bulk_velocity::Vec3{Float64}
     conservation_ratio::Float64
@@ -18,7 +20,7 @@ mutable struct Cell
         sizehint!(walls, 1000)
         return new(
             [RawMoments() for _ in 1:Threads.nthreads(:default)],
-            0, zero(Vec3{Float64}), 0, zero(Vec3{Float64}), 0, walls
+            0, 0, zero(Vec3{Float64}), 0, 0, zero(Vec3{Float64}), 0, walls
         )
     end
 end
@@ -44,9 +46,10 @@ numcells(m::Mesh) = size(m.cells)
 inbounds(index, m::Mesh) = checkbounds(Bool, m.cells, index)
 inbounds(x::Point2, m::Mesh) = all(0 .< x .< m.length)
 index(x, m::Mesh) = CartesianIndex(ceil.(Int, x./ cellsize(m))...)
-function boundingindices(l::Line, m::Mesh; startindex=nothing)
+function boundingindices(l::Line, m::Mesh; startindex=nothing, stopindex=nothing)
     isnothing(startindex) && (startindex = index(pointfrom(l), m))
-    return (:)(extrema((startindex, index(pointto(l), m)))...)
+    isnothing(stopindex) && (stopindex = index(pointto(l), m))
+    return (:)(extrema((startindex, stopindex))...)
 end
 
 Base.eachindex(m::Matrix, threadid) = (

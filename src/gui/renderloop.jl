@@ -31,7 +31,8 @@ function renderloop(gui_data, channel)
             end
 
             # Timing
-            for field in [:sim_start, :insertion, :movement, :deposition, :collision]
+            for field in [:sim_start, :movement, :relax_parameters, :relax,
+                :conservation_parameters, :conservation]
                 setfield!(gui_data.timing_data, field,
                     getfield(guidata(channel).timing_data, field)
                 )
@@ -47,8 +48,6 @@ function renderloop(gui_data, channel)
         dur > 0.01 && sleep(0.8 * dur)
         while frametime() - starttime < 1; end
     end
-    GLFW.make_windowed!(gui_data.screen.glscreen)
-    close(gui_data.screen; reuse=false)
 end
 
 function copy_data!(channel_data, gui_data::GUIData)
@@ -70,10 +69,11 @@ end
 
 function print_console_output(data)
     com = data.communication - data.rendering
-    msg = @sprintf "\u1b[15F
+    msg = @sprintf "\u1b[16F
         ____________________________________________
        | Wait for simulation..........%6.2f frames |
     " com
+
 
     pol = data.pollevents - data.gui_start
     rnd = data.rendering - data.pollevents
@@ -85,18 +85,22 @@ function print_console_output(data)
        | Copy new data................%6.2f frames |
     " pol rnd cpy
 
-    ins = data.insertion - data.sim_start
-    mov = data.movement - data.insertion
-    dep = data.deposition - data.movement
-    col = data.collision - data.deposition
+
+    mov = data.movement - data.sim_start
+    rel_par = data.relax_parameters - data.movement
+    rel = data.relax - data.relax_parameters
+    con_par = data.conservation_parameters - data.relax
+    con = data.conservation - data.conservation_parameters
     msg *= @sprintf "   | ___________________________________________|
        |                 Simulation                 |
-       | Insertion....................%6.2f frames |
        | Movement.....................%6.2f frames |
-       | Deposition...................%6.2f frames |
-       | Collision....................%6.2f frames |
+       | Relaxation Params............%6.2f frames |
+       | Relaxation...................%6.2f frames |
+       | Conservation Params..........%6.2f frames |
+       | Conservation ................%6.2f frames |
         ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-    " ins mov dep col
+    " mov rel_par rel con_par con
+
 
     print(msg)
 end

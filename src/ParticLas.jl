@@ -18,11 +18,12 @@ mutable struct TimingData
     copy::Float64
 
     sim_start::Float64
-    insertion::Float64
     movement::Float64
-    deposition::Float64
-    collision::Float64
-    TimingData() = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    relax_parameters::Float64
+    relax::Float64
+    conservation_parameters::Float64
+    conservation::Float64
+    TimingData() = new(zeros(11)...)
 end
 
 include("constants.jl")
@@ -35,7 +36,7 @@ include("gui.jl")
 function run_particlas()
     mesh, species, time_step, barrier = setup_simulation()
 
-    channel = SwapChannel(GUIToSimulation)
+    channel = SwapChannel(CommunicationData)
 
     # For the timing output:
     print(prod("\n" for i in 1:20))
@@ -54,21 +55,30 @@ function run_particlas()
                 threadid
             )
         catch e
-            io = open(string(thread_id, "_sim.error"), "w")
+            io = open(string(threadid, "_sim.error"), "w")
             showerror(io, e, catch_backtrace())
             close(io)
+            sleep(0.2)
+            raise_error(barrier)
+            raise_error(channel)
         end
     end
 
     # Start GUI renderloop
     #Threads.@spawn :interactive
+    gui_data = setup_gui()
     try
-        gui_data = setup_gui()
         renderloop(gui_data, channel)
     catch e
         io = open("gui.error", "w")
         showerror(io, e, catch_backtrace())
         close(io)
+        sleep(0.2)
+        raise_error(barrier)
+        raise_error(channel)
+    finally
+        GLFW.make_windowed!(gui_data.screen.glscreen)
+        close(gui_data.screen; reuse=false)
     end
 end
 
