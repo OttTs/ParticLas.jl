@@ -2,22 +2,23 @@ mutable struct RawMoments
     v⁰::Int64
     v¹::Vec3{Float64}
     v²::Float64
-    RawMoments() = new(0, 0, 0)
+    RawMoments() = new(0, zero(Vec3{Float64}), 0)
 end
 
 mutable struct Cell
     raw_moments::Vector{RawMoments}
     relaxation_probability::Float64
-    bulk_velocity::Float64
+    bulk_velocity::Vec3{Float64}
     scale_parameter::Float64
-    tmp_bulk_velocity::Float64
+    tmp_bulk_velocity::Vec3{Float64}
     conservation_ratio::Float64
     walls::Vector{Wall} # TODO We may use an "AllocatedVector"
     function Cell()
         walls = Wall[]
         sizehint!(walls, 1000)
         return new(
-            [RawMoments() for _ in 1:Threads.nthreads(:default)], 0, 0, 0, 0, 0, walls
+            [RawMoments() for _ in 1:Threads.nthreads(:default)],
+            0, zero(Vec3{Float64}), 0, zero(Vec3{Float64}), 0, walls
         )
     end
 end
@@ -37,21 +38,23 @@ struct Mesh
     )
 end
 
-cellsize(m::Mesh) = m.length .numcells/ (m)
+cellsize(m::Mesh) = m.length./numcells(m)
 cellvolume(m::Mesh) = prod(cellsize(m))
 numcells(m::Mesh) = size(m.cells)
 inbounds(index, m::Mesh) = checkbounds(Bool, m.cells, index)
 inbounds(x::Point2, m::Mesh) = all(0 .< x .< m.length)
 index(x, m::Mesh) = CartesianIndex(ceil.(Int, x./ cellsize(m))...)
-boundingbox(l::Line, m::Mesh) = extrema(index.(points(l), m))
+function boundingindices(l::Line, m::Mesh; startindex=nothing)
+    isnothing(startindex) && (startindex = index(pointfrom(l), m))
+    return (:)(extrema((startindex, index(pointto(l), m)))...)
+end
 
 Base.eachindex(m::Matrix, threadid) = (
     @inline(); threadid:Threads.nthreads(:default):length(m)
 )
 
 function add!(m::Mesh, w::Wall)
-    imin, imax = boundingbox(w.line, m)
-    for index in imin:imax
+    for index in boundingindices(w.line, m)
         push!(m.cells[index].walls, w)
     end
 end

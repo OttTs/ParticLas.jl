@@ -6,6 +6,7 @@ struct Line
     Line(p::Point2, v::Vec2) = new(p, v)
 end
 
+points(l::Line) = (l.point, l.point + l.vector)
 pointfrom(l::Line) = l.point
 pointto(l::Line) = l.point + l.vector
 

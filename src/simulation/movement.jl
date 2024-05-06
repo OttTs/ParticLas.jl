@@ -6,7 +6,10 @@ function movement_step!(particles, mesh, time_step)
         Δt = time_step
         for _ in 1:1000 # Tunneling happens a lot somehow... while true
             trajectory = Line(particle.position, Vec2{Float64}(Δt * particle.velocity))
-            next_crossing = next_wall_hit(trajectory, mesh; last_wall=wall)
+            next_crossing = next_wall_hit(trajectory, mesh;
+                last_wall=wall,
+                startindex=particle.index
+            )
 
             if isnothing(next_crossing)
                 particle.position += trajectory.vector
@@ -22,17 +25,12 @@ function movement_step!(particles, mesh, time_step)
     end
 end
 
-function next_wall_hit(trajectory::Line, mesh::SimulationMesh; last_wall=nothing)
-    index_start, index_stop = extrema((
-        get_index(pointfrom(trajectory), mesh),
-        get_index(pointto(trajectory), mesh)
-    ))
-
+function next_wall_hit(trajectory::Line, mesh::Mesh; last_wall, startindex)
     next_wall = nothing
     fraction = one(Float64)
 
     # Check all cells in the "bounding rectangle"
-    for index in index_start:index_stop
+    for index in boundingindices(trajectory, mesh; startindex)
         inbounds(index, mesh) || continue
         cell = mesh.cells[index]
 

@@ -8,12 +8,13 @@
     @test inflow.most_probable_velocity ≈ 337.1950561356927
     @test inflow.number_flux ≈ 187.8738215686097 / (species.mass * species.weighting)
 
-    mesh = ParticLas.SimulationMesh((1,1), (100, 100), 1)
+    mesh = ParticLas.Mesh((1,1), (100, 100))
+    ParticLas.set!(mesh.inflow_condition, 1.225, 100, 273, species)
 
     Δt = 10^-7
-    ParticLas.insert_particles(particles, mesh, inflow, Δt)
+    ParticLas.insert_particles!(particles, mesh, Δt)
 
-    num_new = inflow.number_flux * Δt / Threads.nthreads(:default)
+    num_new = mesh.inflow_condition.number_flux * Δt / Threads.nthreads(:default)
     @test isapprox(length(particles), num_new, atol=1)
 
     @test all(p.velocity[1] > 0 for p in particles)

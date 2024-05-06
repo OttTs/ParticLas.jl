@@ -3,9 +3,9 @@ include("simulation/species.jl")
 include("simulation/particles.jl")
 include("simulation/statistics.jl")
 include("simulation/wall.jl")
+include("simulation/inflow.jl")
 include("simulation/mesh.jl")
 include("simulation/collision_operator.jl")
-include("simulation/inflow.jl")
 include("simulation/movement.jl")
 
 function setup_simulation()
@@ -27,7 +27,7 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
 
             #------------------------------------------------------------------------------
             # Movement Step
-            insert_particles(particles, mesh, time_step)
+            insert_particles!(particles, mesh, time_step)
             movement_step!(particles, mesh, time_step)
             sum_up_particles!(particles, mesh, threadid)
 

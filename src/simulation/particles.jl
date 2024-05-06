@@ -20,7 +20,7 @@ For this, a type "AllocatedVector" is defined.
 mutable struct AllocatedVector{T} <: AbstractVector{T}
     _items::Vector{T}
     _num_items::Int64
-    AllocatedVector(T, max_length) = new{T}(zeros(T, max_length), 0)
+    AllocatedVector(T, max_length) = new{T}([zero(T) for _ in 1:max_length], 0)
 end
 
 Base.size(v::AllocatedVector) = (v._num_items,)
@@ -42,5 +42,6 @@ function Base.deleteat!(v::AllocatedVector, index)
     v._num_items -= 1
 end
 
+Base.empty!(v::AllocatedVector) = (@inline; v._num_items = 0)
 
 

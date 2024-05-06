@@ -3,7 +3,7 @@ function sum_up_particles!(particles, mesh, threadid)
     for i in eachindex(mesh.cells, threadid)
         ∑ₚ = mesh.cells[i].raw_moments[threadid]
         ∑ₚ.v⁰ = 0
-        ∑ₚ.v¹ = 0
+        ∑ₚ.v¹ = zero(typeof(∑ₚ.v¹))
         ∑ₚ.v² = 0
     end
 
@@ -59,8 +59,8 @@ end
 
 function calculate_moments(raw_moments)
     N = sum(∑ₚ.v⁰ for ∑ₚ in raw_moments)
-    ∑v = sum(∑ₚ.v⁰ for ∑ₚ in raw_moments)
-    ∑v² = sum(∑ₚ.v⁰ for ∑ₚ in raw_moments)
+    ∑v = sum(∑ₚ.v¹ for ∑ₚ in raw_moments)
+    ∑v² = sum(∑ₚ.v² for ∑ₚ in raw_moments)
 
     N < 1 && return N, zeros(typeof(∑v)), 0
     ∑c² = ∑v² - ∑v ⋅ ∑v / N
