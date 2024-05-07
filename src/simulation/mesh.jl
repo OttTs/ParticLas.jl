@@ -50,18 +50,14 @@ function boundingindices(l::Line, m::Mesh; startindex=nothing, stopindex=nothing
     return (:)(extrema((startindex, stopindex))...)
 end
 
-Base.eachindex(m::Matrix, threadid) = (
-    @inline(); threadid:Threads.nthreads(:default):length(m)
-)
-
 function add!(m::Mesh, w::Wall)
     for index in boundingindices(w.line, m)
         push!(m.cells[index].walls, w)
     end
 end
 
-function delete_walls!(m::Mesh, thread_id)
-    for i in eachindex(m.cells, thread_id)
+function delete_walls!(m::Mesh)
+    @batch for i in eachindex(m.cells)
         cell = m.cells[i]
         empty!(cell.walls)
     end

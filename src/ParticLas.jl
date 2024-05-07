@@ -9,6 +9,7 @@ using LinearAlgebra
 using StaticArrays: @SMatrix
 using SpecialFunctions: erf
 using Printf: @sprintf
+using Polyester: @batch
 
 mutable struct TimingData
     gui_start::Float64
@@ -37,7 +38,10 @@ include("gui.jl")
 # TODO num_threads is given by Threads.nthreads(:default)
 
 function run_particlas()
-    mesh, species, time_step, barrier = setup_simulation()
+    mesh, species, time_step = setup_simulation()
+    particles = Particles(MAX_NUM_PARTICLES)
+
+    gui_data = setup_gui()
 
     channel = SwapChannel(CommunicationData)
 
@@ -45,31 +49,20 @@ function run_particlas()
     print(prod("\n" for i in 1:20))
 
     # Add simulation threads
-    for threadid in 1:Threads.nthreads()
-        Threads.@spawn :default try
-            particles = AllocatedVector(Particle, MAX_NUM_THREAD_PARTICLES)
-            simulation_thread(
-                particles,
-                mesh,
-                species,
-                time_step,
-                barrier,
-                channel,
-                threadid
-            )
-        catch e
-            io = open(string(threadid, "_sim.error"), "w")
-            showerror(io, e, catch_backtrace())
-            close(io)
-            sleep(0.2)
-            raise_error(barrier)
-            raise_error(channel)
-        end
+    Threads.@spawn :default try
+        simulation_thread(particles, mesh, species, time_step, channel)
+    catch e
+        io = open(string("sim.error"), "w")
+        showerror(io, e, catch_backtrace())
+        close(io)
+        sleep(0.2)
+        raise_error(barrier)
+        raise_error(channel)
     end
 
     # Start GUI renderloop
     #Threads.@spawn :interactive
-    gui_data = setup_gui()
+
     try
         renderloop(gui_data, channel)
     catch e

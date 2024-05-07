@@ -12,74 +12,59 @@ function setup_simulation()
     mesh = Mesh(MESH_LENGTH, NUM_CELLS)
     species = Species(2E16, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
     time_step = 1E-6
-    barrier = Barrier()
-    return mesh, species, time_step, barrier
+    return mesh, species, time_step
 end
 
-function simulation_thread(particles, mesh, species, time_step, barrier, channel, threadid)
+function simulation_thread(particles, mesh, species, time_step, channel)
     # todo inflow and wall_condition is in mesh
     while !simdata(channel).terminate
         if !simdata(channel).pause
-            if threadid == 1
-                timing = simdata(channel).timing_data
-                timing.sim_start = frametime()
-            end
+            timing = simdata(channel).timing_data
+            timing.sim_start = frametime()
 
             #------------------------------------------------------------------------------
             # Movement Step
             insert_particles!(particles, mesh, time_step)
-            threadid == 1 && (timing.pure_insertion = frametime())
+            timing.pure_insertion = frametime()
             movement_step!(particles, mesh, time_step)
-            threadid == 1 && (timing.pure_movement = frametime())
-            sum_up_particles!(particles, mesh, threadid)
-            threadid == 1 && (timing.sync = frametime())
-            synchronize!(barrier)
-            threadid == 1 && (timing.movement = frametime())
+            timing.pure_movement = frametime()
+            sum_up_particles!(particles, mesh)
+            timing.sync = frametime()
+            timing.movement = frametime()
             #------------------------------------------------------------------------------
             # Collision Step
-            relaxation_parameters!(mesh, species, time_step, threadid)
-            synchronize!(barrier)
-            threadid == 1 && (timing.relax_parameters = frametime())
+            relaxation_parameters!(mesh, species, time_step)
+            timing.relax_parameters = frametime()
             relax_particles!(particles, mesh)
-            sum_up_particles!(particles, mesh, threadid)
-            synchronize!(barrier)
-            threadid == 1 && (timing.relax = frametime())
-            conservation_parameters!(mesh, threadid)
-
-            synchronize!(barrier)
-            threadid == 1 && (timing.conservation_parameters = frametime())
+            sum_up_particles!(particles, mesh)
+            timing.relax = frametime()
+            conservation_parameters!(mesh)
+            timing.conservation_parameters = frametime()
             conservation_step!(particles, mesh)
-            threadid == 1 && (timing.conservation = frametime())
+            timing.conservation = frametime()
             #------------------------------------------------------------------------------
         end
 
-        send_data!(particles, mesh, channel, threadid)
+        send_data!(particles, mesh, channel)
 
-        simdata(channel).delete_walls && delete_walls!(mesh, threadid)
-        synchronize!(barrier)
+        simdata(channel).delete_walls && delete_walls!(mesh)
 
-        if threadid == 1
-            swap!(channel)
-            update_simulation_data!(mesh, species, channel)
-        end
+        swap!(channel)
+        update_simulation_data!(mesh, species, channel)
 
-        synchronize!(barrier)
         simdata(channel).delete_particles && empty!(particles)
     end
 end
 
-function send_data!(particles, mesh, channel, threadid)
+function send_data!(particles, mesh, channel)
     data = simdata(channel)
     if data.plot_type == :particles
-        step = floor(Int, Threads.nthreads(:default) * maxlength(particles) /
-            length(data.particle_positions))
-        index = threadid
-        for i in 1:step:length(particles)
-            data.particle_positions[index] = particles[i].position
-            index += Threads.nthreads(:default)
+        @batch for i in eachindex(particles.position)
+            i > length(data.particle_positions) && break
+            data.particle_positions[i] = particles.position[i]
         end
     else
-        for i in eachindex(mesh.cells, threadid)
+        @batch for i in eachindex(mesh.cells)
             if data.plot_type == :ρ
                 data.mesh_values[i] = mesh.cells[i].density
             elseif data.plot_type == :u

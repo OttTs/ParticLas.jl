@@ -18,17 +18,22 @@ end
 function insert_particles!(particles, mesh, time_step)
     ic = mesh.inflow_condition
     num_new_particles = stochastic_round(
-        ic.number_flux * mesh.length[2] * time_step / Threads.nthreads(:default)
+        ic.number_flux * mesh.length[2] * time_step
     )
-    for _ in 1:num_new_particles
-        isfull(particles) && break
+    # TODO This does not need to be threaded...
+    for i in eachindex(particles.position)
+        particles.inside[i] && continue # TODO this may be quite slow :D
 
-        p = additem!(particles)
-        p.position = Point2{Float64}(0, rand() * mesh.length[2])
-        p.velocity = sample_inflow_velocity(ic.most_probable_velocity, ic.velocity)
-        p.index = index(p.position, mesh)
+        particles.position[i] = Point2{Float64}(0, rand() * mesh.length[2])
+        particles.velocity[i] =
+            sample_inflow_velocity(ic.most_probable_velocity, ic.velocity)
+        particles.index[i] = index(particles.position[i], mesh)
+        particles.inside[i] = true
 
         # Move back for a fraction of a time step to avoid particle clumping together
-        p.position = p.position - rand() * time_step * Vec2{Float64}(p.velocity)
+        particles.position[i] -= rand() * time_step * Vec2{Float64}(particles.velocity[i])
+
+        num_new_particles -= 1
+        num_new_particles <= 0 && break
     end
 end

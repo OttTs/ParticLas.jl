@@ -3,6 +3,30 @@ A particle is defined by its 2D position and its 3D velocity.
 Since particle operations are the most time critical, the position of the particle
 inside the mesh (index) is explicitly stored.
 =#
+
+struct Particles
+    position::Vector{Point2{Float64}}
+    velocity::Vector{Vec3{Float64}}
+    index::Vector{CartesianIndex{2}}
+    inside::Vector{Bool}
+    Particles(max_num) = new(
+        zeros(Point2{Float64}, max_num),
+        zeros(Vec3{Float64}, max_num),
+        zeros(CartesianIndex{2}, max_num),
+        zeros(Bool, max_num)
+    )
+end
+
+Base.eachindex(p::Particles) = eachindex(p.index)
+
+function Base.empty!(p::Particles)
+    @batch for i in eachindex(p.inside)
+        p.inside[i] = 0
+    end
+end
+
+
+#=
 mutable struct Particle
     position::Point2{Float64}
     velocity::Vec3{Float64}
@@ -50,4 +74,4 @@ end
 
 Base.empty!(v::AllocatedVector) = (@inline; v._num_items = 0)
 
-
+=#
