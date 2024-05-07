@@ -6,10 +6,11 @@ If all threads have added a counter, synchronization is done, otherwise wait.
 mutable struct Barrier
     _condition::Base.GenericCondition{ReentrantLock}
     _counter::Int8
+    @atomic _atomic_counter::Int8
     _num_threads::Int8
     function Barrier()
         _condition = Threads.Condition()
-        return new(_condition, 0, Threads.nthreads(:default))
+        return new(_condition, 0, 1, Threads.nthreads(:default))
     end
 end
 
@@ -22,6 +23,34 @@ function synchronize!(b::Barrier)
         else
             wait(b._condition, first=true)
         end
+    end
+end
+
+function synchronize_blocking!(b::Barrier, id)
+    from = Int8(id)
+    to = Int8(id + 1)
+    ok = false
+    while !ok
+        #a = time_ns()
+        _, ok = @atomicreplace(b._atomic_counter, from => to)
+        #while a > time_ns(); end
+    end
+
+    # Here we know that all threads are waiting
+    # Now, they can leave one by one
+
+    from = Int8(id + b._num_threads)
+    to = Int8(id + b._num_threads + 1)
+    ok = false
+    while !ok
+        #a = time_ns()
+        _, ok = @atomicreplace(b._atomic_counter, from => to)
+        #while a > time_ns(); end
+    end
+
+    # The last thread needs to reset the counter before leaving
+    if id == b._num_threads
+        @atomic b._atomic_counter = 1
     end
 end
 
