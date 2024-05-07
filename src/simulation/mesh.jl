@@ -25,8 +25,6 @@ mutable struct Cell
     end
 end
 
-Base.zero(::Type{T}) where {T<:Cell} = Cell()
-
 struct Mesh
     length::NTuple{2,Float64}
     cells::Matrix{Cell}
@@ -34,7 +32,7 @@ struct Mesh
     wall_condition::WallCondition
     Mesh(length, numcells) = new(
         length,
-        zeros(Cell, numcells),
+        [Cell() for i in 1:numcells[1], j in 1:numcells[2]],
         InflowCondition(),
         WallCondition()
     )

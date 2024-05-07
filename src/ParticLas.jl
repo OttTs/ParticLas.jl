@@ -19,11 +19,14 @@ mutable struct TimingData
 
     sim_start::Float64
     movement::Float64
+    sync::Float64
+    pure_insertion::Float64
+    pure_movement::Float64
     relax_parameters::Float64
     relax::Float64
     conservation_parameters::Float64
     conservation::Float64
-    TimingData() = new(zeros(11)...)
+    TimingData() = new(zeros(14)...)
 end
 
 include("constants.jl")

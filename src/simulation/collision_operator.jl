@@ -1,6 +1,6 @@
 function sum_up_particles!(particles, mesh, threadid)
     # Reset moments
-    for i in eachindex(mesh.cells, threadid)
+    for i in eachindex(mesh.cells)
         ∑ₚ = mesh.cells[i].raw_moments[threadid]
         ∑ₚ.v⁰ = 0
         ∑ₚ.v¹ = zero(typeof(∑ₚ.v¹))
@@ -22,7 +22,7 @@ function relaxation_parameters!(mesh, species, time_step, threadid)
 
         N, cell.bulk_velocity, σ² = calculate_moments(cell.raw_moments)
 
-        cell.scale_parameter = √σ²
+        cell.scale_parameter = σ² <= 0 ? 0 : √σ²
 
         # We only need the density and temperature for the visualization!
         cell.density = density(N, species, mesh)
@@ -45,7 +45,7 @@ function conservation_parameters!(mesh, threadid)
     for i in eachindex(mesh.cells, threadid)
         cell = mesh.cells[i]
         _, cell.tmp_bulk_velocity, σ² = calculate_moments(cell.raw_moments)
-        cell.conservation_ratio = cell.scale_parameter / √(σ²)
+        cell.conservation_ratio = σ² <= 0 ? 0 : cell.scale_parameter / √(σ²)
     end
 end
 

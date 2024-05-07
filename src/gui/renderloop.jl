@@ -1,4 +1,5 @@
 function renderloop(gui_data, channel)
+    i = 0
     while !gui_data.terminate[]
         starttime = frametime()
 
@@ -31,8 +32,8 @@ function renderloop(gui_data, channel)
             end
 
             # Timing
-            for field in [:sim_start, :movement, :relax_parameters, :relax,
-                :conservation_parameters, :conservation]
+            for field in [:sim_start, :movement, :sync, :pure_insertion, :pure_movement,
+                :relax_parameters, :relax, :conservation_parameters, :conservation]
                 setfield!(gui_data.timing_data, field,
                     getfield(guidata(channel).timing_data, field)
                 )
@@ -41,7 +42,12 @@ function renderloop(gui_data, channel)
         gui_data.timing_data.copy = frametime()
 
         # Print debug output
-        print_console_output(gui_data.timing_data)
+        if i > 100 # TODO Delete i...
+            !gui_data.terminate[] && print_console_output(gui_data.timing_data)
+            i = 0
+        else
+            i += 1
+        end
 
         # Wait for the rest of the frame
         dur = (1 + starttime - frametime()) / FPS
@@ -69,7 +75,7 @@ end
 
 function print_console_output(data)
     com = data.communication - data.rendering
-    msg = @sprintf "\u1b[16F
+    msg = @sprintf "\u1b[20F
         ____________________________________________
        | Wait for simulation..........%6.2f frames |
     " com
@@ -87,6 +93,10 @@ function print_console_output(data)
 
 
     mov = data.movement - data.sim_start
+    ins = data.pure_insertion - data.sim_start
+    pmv = data.pure_movement - data.pure_insertion
+    sum = data.sync - data.pure_movement
+    snc = data.movement - data.sync
     rel_par = data.relax_parameters - data.movement
     rel = data.relax - data.relax_parameters
     con_par = data.conservation_parameters - data.relax
@@ -94,13 +104,16 @@ function print_console_output(data)
     msg *= @sprintf "   | ___________________________________________|
        |                 Simulation                 |
        | Movement.....................%6.2f frames |
+       | ..Insertion..................%6.2f frames |
+       | ..Movement...................%6.2f frames |
+       | ..Sum........................%6.2f frames |
+       | ..Sync.......................%6.2f frames |
        | Relaxation Params............%6.2f frames |
        | Relaxation...................%6.2f frames |
        | Conservation Params..........%6.2f frames |
        | Conservation ................%6.2f frames |
         ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-    " mov rel_par rel con_par con
-
+    " mov ins pmv sum snc rel_par rel con_par con
 
     print(msg)
 end
