@@ -27,7 +27,7 @@
     Δt = 1E-9
     ρ = species.weighting * species.mass * N
     T = ParticLas.temperature(σ², species)
-    P = ParticLas.collision_probability(ρ, T, Δt, species)
+    P = ParticLas.relaxation_probability(ρ, T, Δt, species)
     mesh.cells[1,1].bulk_velocity = u
     mesh.cells[1,1].relaxation_probability = P
     mesh.cells[1,1].scale_parameter = √σ²
