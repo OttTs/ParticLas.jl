@@ -119,6 +119,8 @@ mutable struct CommunicationData
     particle_positions::Vector{Point2f}
     mesh_values::Matrix{Float32}
 
+    object_points::Vector{Point2f} # Use this if many walls shall be drawn at once. This allocates memory!
+
     CommunicationData() = new(
         false,
         true,
@@ -130,7 +132,8 @@ mutable struct CommunicationData
         false,
         false,
         zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * (Threads.nthreads(:default))),
-        zeros(Float32, NUM_CELLS)
+        zeros(Float32, NUM_CELLS),
+        Point2f[]
     )
 end
 

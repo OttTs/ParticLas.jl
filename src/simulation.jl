@@ -47,7 +47,7 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
 
         if threadid == 1
             swap!(channel) # TODO ? swap_blocking!(channel, 2)
-            update_simulation_data!(mesh, species, channel)
+            update_simulation_data!(mesh, species, simdata(channel))
         end
 
         synchronize!(barrier)
@@ -76,23 +76,29 @@ function send_data!(particles, mesh, channel, threadid)
     end
 end
 
-function update_simulation_data!(mesh, species, channel)
-    if !any(isnan.(simdata(channel).new_wall))
-        add!(mesh, Wall(simdata(channel).new_wall...))
+function update_simulation_data!(mesh, species, channel_data)
+    if !any(isnan.(channel_data.new_wall))
+        add!(mesh, Wall(channel_data.new_wall...))
     end
 
-    density = 1.225 * exp(-0.11856 * simdata(channel).inflow_altitude)
+    for i in 1:(length(channel_data.object_points)-1)
+        start = channel_data.object_points[i]
+        stop = channel_data.object_points[i+1]
+        add!(mesh, Wall(start, stop))
+    end
+
+    density = 1.225 * exp(-0.11856 * channel_data.inflow_altitude)
     set!(
         mesh.inflow_condition,
         density,
-        simdata(channel).inflow_velocity,
+        channel_data.inflow_velocity,
         200, # TODO Variable inflow temperature?
         species
     )
 
     set!(
         mesh.wall_condition,
-        simdata(channel).accomodation_coefficient,
+        channel_data.accomodation_coefficient,
         species
     )
 end

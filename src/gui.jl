@@ -10,6 +10,7 @@ mutable struct GUIData
     inflow_altitude::Float64
     inflow_velocity::Float64
     new_wall::NTuple{2, Point2f}
+    object_points::Vector{Point2f}
     accomodation_coefficient::Float64
     delete_walls::Bool
     delete_particles::Bool
@@ -30,6 +31,7 @@ mutable struct GUIData
             DEFAULT_ALTITUDE,
             DEFAULT_VELOCITY,
             (Point2{Float64}(NaN), Point2{Float64}(NaN)),
+            Point2f[],
             DEFAULT_ACCOMODATION_COEFFICIENT,
             false,
             false

@@ -24,6 +24,7 @@ function reset_data!(gui_data)
     gui_data.new_wall = (Point2{Float64}(NaN), Point2{Float64}(NaN))
     gui_data.delete_particles = false
     gui_data.delete_walls = false
+    empty!(gui_data.object_points)
 end
 
 function copy_data!(channel_data, gui_data::GUIData)
@@ -41,6 +42,7 @@ function copy_data!(channel_data, gui_data::GUIData)
     for i in fields
         setfield!(channel_data, i, getfield(gui_data, i))
     end
+    copy!(channel_data.object_points, gui_data.object_points)
 end
 
 function set_new_data!(gui_data::GUIData, channel_data)

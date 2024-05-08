@@ -19,7 +19,8 @@ function setup_gui()
 
     setup_menu(scene, gui_data;
         pos=(display_size[1], 0) .+ BORDER_WIDTH .* (2, 1),
-        size=(MENU_WIDTH, display_size[2])
+        size=(MENU_WIDTH, display_size[2]),
+        display_size
     )
 
     gui_data.screen = GLMakie.Screen(scene, start_renderloop=false)
@@ -120,7 +121,7 @@ end
 ===========================================================================================
 =#
 
-function setup_menu(scene, gui_data; pos, size)
+function setup_menu(scene, gui_data; pos, size, display_size)
     # Settings Box
     settings_bbox = GLMakie.Rect(pos..., size...)
     GLMakie.Box(scene,
@@ -145,7 +146,7 @@ function setup_menu(scene, gui_data; pos, size)
     i = add_gap!(layout, 10, i)
     i = add_wall_block!(layout, gui_data, i)
     i = add_gap!(layout, 10, i)
-    i = add_menu_block!(layout, gui_data, i)
+    i = add_menu_block!(layout, gui_data, i, display_size)
     i = add_buttons!(layout, gui_data, i + 1)
     i = add_gap!(layout, 50, i)
 
@@ -306,7 +307,7 @@ function add_wall_block!(layout, gui_data, n)
 end
 
 # -----------------------------------------------------------------------------------------
-function  add_menu_block!(layout, gui_data, n)
+function  add_menu_block!(layout, gui_data, n, display_size)
     GLMakie.Label(layout[n,:], "Plotting",
         fontsize = SECTION_FONTSIZE,
         halign=:left
@@ -336,12 +337,54 @@ function  add_menu_block!(layout, gui_data, n)
             fontsize = CONTENT_FONTSIZE,
             halign=:left
         ),
-        menu
+        menu,
     )
+
+    n += 1
+
+    # TODO Add examples here!
+    examples_files = ["triangle.jl", "square.jl", "capsule.jl"]
+    examples_options = ["Triangle", "Square", "Capsule"]
+    examples = GLMakie.Menu(
+        layout[n,:],
+        dropdown_arrow_size = CONTENT_FONTSIZE*2÷3,
+        options = examples_options,
+        default = examples_options[1],
+        fontsize = CONTENT_FONTSIZE,
+        cell_color_active=MENU_COLOR_ACTIVE,
+        cell_color_hover=MENU_COLOR_HOVER,
+        cell_color_inactive_even=MENU_COLOR_EVEN,
+        cell_color_inactive_odd=MENU_COLOR_ODD,
+        selection_cell_color_inactive=MENU_COLOR_INACTIVE
+        # dropdown_arrow_color=
+    )
+
+    layout[n,:] = GLMakie.hgrid!(
+        GLMakie.Label(layout[n,:], "Draw",
+            fontsize = CONTENT_FONTSIZE,
+            halign=:left
+        ),
+        examples,
+    )
+
 
     GLMakie.on(menu.selection) do _
         gui_data.display_particles[] = menu.i_selected[] == 1
         gui_data.plot_type = symbols[menu.i_selected[]]
+    end
+
+    GLMakie.on(examples.selection) do _
+        include("examples/" * examples_files[examples.i_selected[]])
+        for pt in object_points
+            push!(gui_data.wall_points[], pt .* display_size ./ MESH_LENGTH)
+        end
+        push!(gui_data.wall_points[], Point2f(NaN))
+        notify(gui_data.wall_points)
+
+        gui_data.object_points = object_points
+        #for
+        # TODO cannot add walls at once. Do it like this: add wall one by one until all walls are added.
+
     end
 
     return n + 1
