@@ -31,7 +31,7 @@ const SLIDER_COLOR_RIGHT = RGBf(rand(3)...)
 const SLIDER_COLOR_LEFT = RGBf(rand(3)...)
 const SLIDER_COLOR_CIRCLE = RGBf(rand(3)...)
 
-const MENU_COLOR_ACTIVE = GBf(rand(3)...)
+const MENU_COLOR_ACTIVE = RGBf(rand(3)...)
 const MENU_COLOR_HOVER = RGBf(rand(3)...)
 const MENU_COLOR_EVEN = RGBf(rand(3)...)
 const MENU_COLOR_ODD = RGBf(rand(3)...)
