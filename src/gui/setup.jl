@@ -147,7 +147,12 @@ function setup_menu(scene, gui_data; pos, size)
     i = add_gap!(layout, 10, i)
     i = add_menu_block!(layout, gui_data, i)
     i = add_buttons!(layout, gui_data, i + 1)
-    add_gap!(layout, 50, i)
+    i = add_gap!(layout, 50, i)
+
+    GLMakie.Label(layout[i,:], "© Tobias Ott, Numerical Modeling and Simulation, Institute of Space Systems, University of Stuttgart",
+        fontsize = 8,
+        halign=:center
+    )
 end
 
 # -----------------------------------------------------------------------------------------
@@ -184,8 +189,26 @@ function add_logo!(scene, settings_bbox, layout, n)
     origin = settings_bbox.origin
     widths = settings_bbox.widths
 
+    logo = GLMakie.load("logos/irs.png")
+    logo_size = (510/397*60, 60)
+    img = GLMakie.image!(scene,
+        (origin[1] + widths[1]÷2 - 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
+        origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size[2], 0),
+        GLMakie.rotr90(logo)
+    )
+    GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
+
+    logo = GLMakie.load("logos/unistuttgart.png")
+    logo_size = 60
+    img = GLMakie.image!(scene,
+        (origin[1] + widths[1]÷2 + 125) .+ (-0.5 * logo_size, 0.5 * logo_size),
+        origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size, 0),
+        GLMakie.rotr90(logo)
+    )
+    GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
+
+    logo = GLMakie.load("logos/particlas.png")
     logo_size = 100
-    logo = GLMakie.load("src/gui/logo.png")
     img = GLMakie.image!(scene,
         (origin[1] + widths[1]÷2) .+ (-0.5 * logo_size, 0.5 * logo_size),
         origin[2] - BORDER_WIDTH + widths[2] .+ (-logo_size, 0),

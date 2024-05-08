@@ -1,8 +1,1 @@
-- Micro Stutters
-- Increasing RAM!
-
-
-Final code structure:
-1. So wie in der 1. Version mit 4 syncs
-2. 2 * 6 Threaded Vectors für jeden Thread
-3.
+- Remove Particles! when paused does not immediately remove particles
