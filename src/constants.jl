@@ -1,11 +1,12 @@
-const MAX_NUM_THREAD_PARTICLES = 10^5
-const MAX_NUM_DISPLAY_PARTICLES = 6 * 10^5
+const UNUSED_THREADS = 1 # I do not know what GLMakie/GLFW is doing...
+
+const MAX_NUM_PARTICLES_PER_THREAD = 10^5
 const NUM_CELLS = (120, 80)
 const MESH_LENGTH = (1.2, 1)
 
-const MIN_ALTITUDE = 80
+const MIN_ALTITUDE = 90
 const MAX_ALTITUDE = 120
-const DEFAULT_ALTITUDE = 80
+const DEFAULT_ALTITUDE = 90
 
 const MIN_VELOCITY = 5000
 const MAX_VELOCITY = 10000
@@ -21,7 +22,7 @@ const SETTINGS_BORDER_WIDTH=10
 const SECTION_FONTSIZE = 30
 const CONTENT_FONTSIZE = 20
 
-const BACKGROUND_COLOR = RGBf(rand(3)...)
+const BACKGROUND_COLOR = "#161e42"
 const MENU_BACKGROUND_COLOR = RGBf(rand(3)...)
 const DISPLAY_BACKGROUND_COLOR = RGBf(1,1,1)#RGBf(rand(3)...)
 
@@ -30,7 +31,7 @@ const SLIDER_COLOR_RIGHT = RGBf(rand(3)...)
 const SLIDER_COLOR_LEFT = RGBf(rand(3)...)
 const SLIDER_COLOR_CIRCLE = RGBf(rand(3)...)
 
-const MENU_COLOR_ACTIVE = RGBf(rand(3)...)
+const MENU_COLOR_ACTIVE = GBf(rand(3)...)
 const MENU_COLOR_HOVER = RGBf(rand(3)...)
 const MENU_COLOR_EVEN = RGBf(rand(3)...)
 const MENU_COLOR_ODD = RGBf(rand(3)...)

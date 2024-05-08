@@ -18,7 +18,7 @@ end
 function insert_particles!(particles, mesh, time_step)
     ic = mesh.inflow_condition
     num_new_particles = stochastic_round(
-        ic.number_flux * mesh.length[2] * time_step / Threads.nthreads(:default)
+        ic.number_flux * mesh.length[2] * time_step / (Threads.nthreads(:default))
     )
     for _ in 1:num_new_particles
         isfull(particles) && break

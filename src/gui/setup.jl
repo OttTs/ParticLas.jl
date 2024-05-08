@@ -24,7 +24,7 @@ function setup_gui()
 
     gui_data.screen = GLMakie.Screen(scene, start_renderloop=false)
     GLFW.make_fullscreen!(gui_data.screen.glscreen)
-    GLFW.SwapInterval(1) # 0?
+    GLFW.SwapInterval(1) # No VSync: 0
 
     return gui_data
 end
@@ -215,9 +215,9 @@ function add_inflow_block!(layout, gui_data, n)
     slidergrid = GLMakie.SliderGrid(layout[n,:],
         (
             label = "Altitude",
-            range = 80:120,
+            range = MIN_ALTITUDE:MAX_ALTITUDE,
             format = "",
-            startvalue = 80,
+            startvalue = DEFAULT_ALTITUDE,
             linewidth = SLIDER_LINE_WIDTH,
             snap=false,
             color_inactive=SLIDER_COLOR_RIGHT,
@@ -225,9 +225,9 @@ function add_inflow_block!(layout, gui_data, n)
             color_active=SLIDER_COLOR_CIRCLE
         ),(
             label = "Velocity",
-            range = 5000:10000,
+            range = MIN_VELOCITY:MAX_VELOCITY,
             format = "",
-            startvalue = 5000,
+            startvalue = DEFAULT_VELOCITY,
             linewidth = SLIDER_LINE_WIDTH,
             snap=false,
             color_inactive=SLIDER_COLOR_RIGHT,

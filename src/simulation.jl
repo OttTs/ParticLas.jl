@@ -10,8 +10,8 @@ include("simulation/movement.jl")
 
 function setup_simulation()
     mesh = Mesh(MESH_LENGTH, NUM_CELLS)
-    species = Species(2E16, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
-    time_step = 1E-6
+    species = Species(3E15, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
+    time_step = 5E-6
     barrier = Barrier()
     return mesh, species, time_step, barrier
 end
@@ -20,46 +20,33 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
     # todo inflow and wall_condition is in mesh
     while !simdata(channel).terminate
         if !simdata(channel).pause
-            if threadid == 1
-                timing = simdata(channel).timing_data
-                timing.sim_start = frametime()
-            end
-
             #------------------------------------------------------------------------------
             # Movement Step
             insert_particles!(particles, mesh, time_step)
-            threadid == 1 && (timing.pure_insertion = frametime())
             movement_step!(particles, mesh, time_step)
-            threadid == 1 && (timing.pure_movement = frametime())
             sum_up_particles!(particles, mesh, threadid)
-            threadid == 1 && (timing.sync = frametime())
-            synchronize_blocking!(barrier, threadid)
-            threadid == 1 && (timing.movement = frametime())
+            synchronize!(barrier)
             #------------------------------------------------------------------------------
             # Collision Step
             relaxation_parameters!(mesh, species, time_step, threadid)
-            synchronize_blocking!(barrier, threadid)
-            threadid == 1 && (timing.relax_parameters = frametime())
+            synchronize!(barrier)
             relax_particles!(particles, mesh)
             sum_up_particles!(particles, mesh, threadid)
-            synchronize_blocking!(barrier, threadid)
-            threadid == 1 && (timing.relax = frametime())
+            synchronize!(barrier)
             conservation_parameters!(mesh, threadid)
 
-            synchronize_blocking!(barrier, threadid)
-            threadid == 1 && (timing.conservation_parameters = frametime())
+            synchronize!(barrier)
             conservation_step!(particles, mesh)
-            threadid == 1 && (timing.conservation = frametime())
             #------------------------------------------------------------------------------
         end
 
         send_data!(particles, mesh, channel, threadid)
 
         simdata(channel).delete_walls && delete_walls!(mesh, threadid)
-        synchronize!(barrier)
+        synchronize!(barrier) # TODO ? synchronize!(barrier)
 
         if threadid == 1
-            swap!(channel)
+            swap!(channel) # TODO ? swap_blocking!(channel, 2)
             update_simulation_data!(mesh, species, channel)
         end
 
@@ -71,12 +58,10 @@ end
 function send_data!(particles, mesh, channel, threadid)
     data = simdata(channel)
     if data.plot_type == :particles
-        step = floor(Int, Threads.nthreads(:default) * maxlength(particles) /
-            length(data.particle_positions))
         index = threadid
-        for i in 1:step:length(particles)
+        for i in eachindex(particles)
             data.particle_positions[index] = particles[i].position
-            index += Threads.nthreads(:default)
+            index += (Threads.nthreads(:default))
         end
     else
         for i in eachindex(mesh.cells, threadid)

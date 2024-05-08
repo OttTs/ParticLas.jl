@@ -19,7 +19,7 @@ mutable struct Cell
         walls = Wall[]
         sizehint!(walls, 1000)
         return new(
-            [RawMoments() for _ in 1:Threads.nthreads(:default)],
+            [RawMoments() for _ in 1:(Threads.nthreads(:default))],
             0, 0, zero(Vec3{Float64}), 0, 0, zero(Vec3{Float64}), 0, walls
         )
     end
@@ -51,7 +51,7 @@ function boundingindices(l::Line, m::Mesh; startindex=nothing, stopindex=nothing
 end
 
 Base.eachindex(m::Matrix, threadid) = (
-    @inline(); threadid:Threads.nthreads(:default):length(m)
+    @inline(); threadid:(Threads.nthreads(:default)):length(m)
 )
 
 function add!(m::Mesh, w::Wall)

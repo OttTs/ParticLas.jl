@@ -14,7 +14,7 @@
     Δt = 10^-7
     ParticLas.insert_particles!(particles, mesh, Δt)
 
-    num_new = mesh.inflow_condition.number_flux * Δt / Threads.nthreads(:default)
+    num_new = mesh.inflow_condition.number_flux * Δt / (Threads.nthreads(:default))
     @test isapprox(length(particles), num_new, atol=1)
 
     @test all(p.velocity[1] > 0 for p in particles)

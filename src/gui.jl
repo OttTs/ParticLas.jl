@@ -13,7 +13,6 @@ mutable struct GUIData
     accomodation_coefficient::Float64
     delete_walls::Bool
     delete_particles::Bool
-    timing_data::TimingData
     screen::GLMakie.Screen{GLFW.Window}
 
     function GUIData()
@@ -22,7 +21,7 @@ mutable struct GUIData
         return new(
             Observable(true),
             Observable(zeros(NUM_CELLS)),
-            Observable(zeros(Point2f, MAX_NUM_DISPLAY_PARTICLES)),#Point2f[]),
+            Observable(zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * (Threads.nthreads(:default)))),
             wall_points,
             false,
             true,
@@ -33,8 +32,7 @@ mutable struct GUIData
             (Point2{Float64}(NaN), Point2{Float64}(NaN)),
             DEFAULT_ACCOMODATION_COEFFICIENT,
             false,
-            false,
-            TimingData()
+            false
         )
     end
 end

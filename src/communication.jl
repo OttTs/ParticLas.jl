@@ -10,7 +10,7 @@ mutable struct Barrier
     _num_threads::Int8
     function Barrier()
         _condition = Threads.Condition()
-        return new(_condition, 0, 1, Threads.nthreads(:default))
+        return new(_condition, 0, 1, (Threads.nthreads(:default)))
     end
 end
 
@@ -31,9 +31,7 @@ function synchronize_blocking!(b::Barrier, id)
     to = Int8(id + 1)
     ok = false
     while !ok
-        #a = time_ns()
         _, ok = @atomicreplace(b._atomic_counter, from => to)
-        #while a > time_ns(); end
     end
 
     # Here we know that all threads are waiting
@@ -43,9 +41,7 @@ function synchronize_blocking!(b::Barrier, id)
     to = Int8(id + b._num_threads + 1)
     ok = false
     while !ok
-        #a = time_ns()
         _, ok = @atomicreplace(b._atomic_counter, from => to)
-        #while a > time_ns(); end
     end
 
     # The last thread needs to reset the counter before leaving
@@ -62,8 +58,9 @@ swap! exchanges the data!
 mutable struct SwapChannel{T}
     _condition::Base.GenericCondition{ReentrantLock}
     _waiting::Bool
+    @atomic _atomic_counter::Int8
     _data::Vector{T}
-    SwapChannel(T) = new{T}(Threads.Condition(), false, [T(), T()])
+    SwapChannel(T) = new{T}(Threads.Condition(), false, 1, [T(), T()])
 end
 
 function swap!(c::SwapChannel)
@@ -76,6 +73,29 @@ function swap!(c::SwapChannel)
             c._waiting = true
             wait(c._condition, first=true)
         end
+    end
+end
+
+function swap_blocking!(c::SwapChannel, id)
+    ok = false
+    while !ok
+        _, ok = @atomicreplace(c._atomic_counter, Int8(id) => Int8(id + 1))
+    end
+
+    # Now, we are both here! Let us exchange the data
+    if id == 2
+        c._data[1], c._data[2] = c._data[2], c._data[1]
+    end
+
+    # Now, leave one by one
+    ok = false
+    while !ok
+        _, ok = @atomicreplace(c._atomic_counter, Int8(id + 2) => Int(id + 3))
+    end
+
+    # Last but not least, reset!
+    if id == 2
+        @atomic c._atomic_counter = 1
     end
 end
 
@@ -98,7 +118,6 @@ mutable struct CommunicationData
 
     particle_positions::Vector{Point2f}
     mesh_values::Matrix{Float32}
-    timing_data::TimingData
 
     CommunicationData() = new(
         false,
@@ -110,9 +129,8 @@ mutable struct CommunicationData
         DEFAULT_ACCOMODATION_COEFFICIENT,
         false,
         false,
-        zeros(Point2f, MAX_NUM_DISPLAY_PARTICLES),
-        zeros(Float32, NUM_CELLS),
-        TimingData()
+        zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * (Threads.nthreads(:default))),
+        zeros(Float32, NUM_CELLS)
     )
 end
 
