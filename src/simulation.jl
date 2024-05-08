@@ -11,7 +11,7 @@ include("simulation/movement.jl")
 function setup_simulation()
     mesh = Mesh(MESH_LENGTH, NUM_CELLS)
     species = Species(3E15, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
-    time_step = 5E-6
+    time_step = 1E-6
     barrier = Barrier()
     return mesh, species, time_step, barrier
 end
