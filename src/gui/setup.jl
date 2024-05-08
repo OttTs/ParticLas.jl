@@ -62,7 +62,7 @@ function setup_display(scene, gui_data; pos, size)
     # 3. Lines for walls
     GLMakie.lines!(display_scene, gui_data.wall_points;
         linewidth = 2,
-        color = :blue
+        color = WALLS_COLOR
     )
 
     # 4. Create rounded edges
