@@ -1,4 +1,6 @@
 /Manifest.toml
 ParticLasApp/
 
+*.error
+
 .vscode/

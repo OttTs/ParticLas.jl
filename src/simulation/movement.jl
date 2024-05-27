@@ -1,38 +1,41 @@
-function movement_step!(particles, mesh, wall_condition, time_step)
-    for index in eachindex(particles)
-        particle = particles[index]
+function movement_step!(particles, mesh, time_step)
+    for i in eachindex(particles)
+        particle = particles[i]
 
         wall = nothing
         Δt = time_step
         for _ in 1:1000 # Tunneling happens a lot somehow... while true
             trajectory = Line(particle.position, Vec2{Float64}(Δt * particle.velocity))
-            next_crossing = next_wall_hit(trajectory, mesh; last_wall=wall)
+            stopindex = index(pointto(trajectory), mesh)
+            next_crossing = next_wall_hit(trajectory, mesh;
+                last_wall=wall,
+                startindex=particle.index,
+                stopindex=stopindex
+            )
 
             if isnothing(next_crossing)
                 particle.position += trajectory.vector
+                particle.index = stopindex
                 break
             else
+                # Something is wrong with walls...
                 wall, fraction = next_crossing
                 particle.position += trajectory.vector * fraction
+                particle.index = index(particle.position, mesh)
                 Δt *= (1 - fraction)
-                collide!(particle, wall, wall_condition)
+                collide!(particle, wall, mesh.wall_condition)
             end
         end
-        inbounds(particle.position, mesh) || deleteat!(particles, index)
+        inbounds(particle.position, mesh) || deleteat!(particles, i)
     end
 end
 
-function next_wall_hit(trajectory::Line, mesh::SimulationMesh; last_wall=nothing)
-    index_start, index_stop = extrema((
-        get_index(pointfrom(trajectory), mesh),
-        get_index(pointto(trajectory), mesh)
-    ))
-
+function next_wall_hit(trajectory::Line, mesh::Mesh; last_wall, startindex, stopindex)
     next_wall = nothing
     fraction = one(Float64)
 
     # Check all cells in the "bounding rectangle"
-    for index in index_start:index_stop
+    for index in boundingindices(trajectory, mesh; startindex, stopindex)
         inbounds(index, mesh) || continue
         cell = mesh.cells[index]
 
