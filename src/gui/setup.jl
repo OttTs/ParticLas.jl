@@ -194,16 +194,18 @@ function add_logo!(scene, settings_bbox, layout, n)
     logo_size = (510/397*60, 60)
     img = GLMakie.image!(scene,
         (origin[1] + widths[1]÷2 - 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
-        origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size[2], 0),
+        origin[2] - BORDER_WIDTH + widths[2] - 10 .+ (-logo_size[2], 0),
         GLMakie.rotr90(logo)
     )
     GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
 
-    logo = GLMakie.load("logos/unistuttgart.png")
-    logo_size = 60
+    logo = GLMakie.load("logos/piclas.png")
+    # 1769 x 870
+    logo_size = (1769/870*60, 60)
+    #logo_size = 60
     img = GLMakie.image!(scene,
-        (origin[1] + widths[1]÷2 + 125) .+ (-0.5 * logo_size, 0.5 * logo_size),
-        origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size, 0),
+        (origin[1] + widths[1]÷2 + 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
+        origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size[2], 0),
         GLMakie.rotr90(logo)
     )
     GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
