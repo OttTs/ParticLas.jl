@@ -24,12 +24,15 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
             # Movement Step
             insert_particles!(particles, mesh, time_step)
             movement_step!(particles, mesh, time_step)
-            sum_up_particles!(particles, mesh, threadid)
-            synchronize!(barrier)
-            #------------------------------------------------------------------------------
-            # Collision Step
-            relaxation_parameters!(mesh, species, time_step, threadid)
-            synchronize!(barrier)
+        end
+        # We still calculate the relaxation parameters for visualization...
+        sum_up_particles!(particles, mesh, threadid)
+        synchronize!(barrier)
+        #------------------------------------------------------------------------------
+        # Collision Step
+        relaxation_parameters!(mesh, species, time_step, threadid)
+        synchronize!(barrier)
+        if !simdata(channel).pause
             relax_particles!(particles, mesh)
             sum_up_particles!(particles, mesh, threadid)
             synchronize!(barrier)
@@ -46,7 +49,7 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
         synchronize!(barrier) # TODO ? synchronize!(barrier)
 
         if threadid == 1
-            swap!(channel) # TODO ? swap_blocking!(channel, 2)
+            swap!(channel) # TODO ? swap_blocking!(channel, 2) TODO It may be faster to just call Threads.@spawn in each loop...
             update_simulation_data!(mesh, species, simdata(channel))
         end
 

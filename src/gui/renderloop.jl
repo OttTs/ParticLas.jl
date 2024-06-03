@@ -46,15 +46,13 @@ function copy_data!(channel_data, gui_data::GUIData)
 end
 
 function set_new_data!(gui_data::GUIData, channel_data)
-    if !gui_data.pause
-        if gui_data.plot_type == :particles
-            particle_positions = channel_data.particle_positions
-            for i in eachindex(particle_positions)
-                particle_positions[i] = particle_positions[i] .* gui_data.point_scaling
-            end
-            gui_data.particle_points[] = particle_positions
-        else
-            gui_data.mesh_values[] = channel_data.mesh_values
+    if gui_data.plot_type == :particles
+        particle_positions = channel_data.particle_positions
+        for i in eachindex(particle_positions)
+            particle_positions[i] = particle_positions[i] .* gui_data.point_scaling
         end
+        gui_data.particle_points[] = particle_positions
+    else
+        gui_data.mesh_values[] = channel_data.mesh_values
     end
 end
