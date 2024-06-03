@@ -15,16 +15,18 @@ function set!(c::InflowCondition, density, velocity, temperature, species)
     c.number_flux = mass_flux / (species.mass * species.weighting)
 end
 
-function insert_particles(particles, mesh, inflow, time_step)
+function insert_particles!(particles, mesh, time_step)
+    ic = mesh.inflow_condition
     num_new_particles = stochastic_round(
-        inflow.number_flux * mesh.length[2] * time_step / Threads.nthreads(:default)
+        ic.number_flux * mesh.length[2] * time_step / (Threads.nthreads(:default))
     )
     for _ in 1:num_new_particles
         isfull(particles) && break
 
-        p = add!(particles)
+        p = additem!(particles)
         p.position = Point2{Float64}(0, rand() * mesh.length[2])
-        p.velocity = sample_inflow_velocity(inflow.most_probable_velocity, inflow.velocity)
+        p.velocity = sample_inflow_velocity(ic.most_probable_velocity, ic.velocity)
+        p.index = index(p.position, mesh)
 
         # Move back for a fraction of a time step to avoid particle clumping together
         p.position = p.position - rand() * time_step * Vec2{Float64}(p.velocity)

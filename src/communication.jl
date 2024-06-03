@@ -3,14 +3,14 @@ A Barrier is used to synchronize all worker threads.
 When "synchronize!" is called, the thread adds one to a counter.
 If all threads have added a counter, synchronization is done, otherwise wait.
 =#
-
 mutable struct Barrier
     _condition::Base.GenericCondition{ReentrantLock}
     _counter::Int8
+    @atomic _atomic_counter::Int8
     _num_threads::Int8
-    function Barrier(num_threads)
+    function Barrier()
         _condition = Threads.Condition()
-        return new(_condition, 0, num_threads)
+        return new(_condition, 0, 1, (Threads.nthreads(:default)))
     end
 end
 
@@ -18,91 +18,110 @@ function synchronize!(b::Barrier)
     lock(b._condition) do
         b._counter += 1
         if b._counter >= b._num_threads
-            notify(b._condition)
             b._counter = 0
+            notify(b._condition)
         else
             wait(b._condition, first=true)
         end
     end
 end
 
+function synchronize_blocking!(b::Barrier, id)
+    from = Int8(id)
+    to = Int8(id + 1)
+    ok = false
+    while !ok
+        _, ok = @atomicreplace(b._atomic_counter, from => to)
+    end
+
+    # Here we know that all threads are waiting
+    # Now, they can leave one by one
+
+    from = Int8(id + b._num_threads)
+    to = Int8(id + b._num_threads + 1)
+    ok = false
+    while !ok
+        _, ok = @atomicreplace(b._atomic_counter, from => to)
+    end
+
+    # The last thread needs to reset the counter before leaving
+    if id == b._num_threads
+        @atomic b._atomic_counter = 1
+    end
+end
+
 #=
-A data channel is used to communicate between the GUI and the worker thread.
+In order for the GUI and Simulation threads to communicate, a SwapChannel is used.
+Each has their own data that can be manipulated until swap! is called.
+swap! exchanges the data!
 =#
-mutable struct DataChannel{T}
+mutable struct SwapChannel{T}
     _condition::Base.GenericCondition{ReentrantLock}
-    _requested::Bool
-    _sender_data::T
-    _channel_data::T
-    _receiver_data::T
-    DataChannel(T) = new{T}(Threads.Condition(), true, T(), T(), T())
+    _waiting::Bool
+    @atomic _atomic_counter::Int8
+    _data::Vector{T}
+    SwapChannel(T) = new{T}(Threads.Condition(), false, 1, [T(), T()])
 end
 
-data(c::DataChannel) = c._receiver_data
-
-#=
-Example usage:
-set!(channel) do data
-    # change data here
-end
-=#
-function set!(f, c::DataChannel)
-    f(c._sender_data)
-end
-
-sender_data(c::DataChannel) = c._sender_data
-
-# Send the data (only one thread)
-function send!(c::DataChannel)
+function swap!(c::SwapChannel)
     lock(c._condition) do
-        while !c._requested
+        if c._waiting
+            c._data[1], c._data[2] = c._data[2], c._data[1]
+            c._waiting = false
+            notify(c._condition)
+        else
+            c._waiting = true
             wait(c._condition, first=true)
         end
-
-        # Swap sender data and receiver data!
-        tmp = c._channel_data
-        c._channel_data = c._sender_data
-        c._sender_data = tmp
-
-        c._requested = false
-        notify(c._condition)
     end
 end
 
-# Receive the data
-function receive!(c::DataChannel)
-    lock(c._condition) do
-        # Wait for sender to complete
-        while c._requested
-            wait(c._condition, first=true) # This allocates...
-        end
+function swap_blocking!(c::SwapChannel, id)
+    ok = false
+    while !ok
+        _, ok = @atomicreplace(c._atomic_counter, Int8(id) => Int8(id + 1))
+    end
 
-        # Swap sender data and receiver data!
-        tmp = c._receiver_data
-        c._receiver_data = c._channel_data
-        c._channel_data = tmp
+    # Now, we are both here! Let us exchange the data
+    if id == 2
+        c._data[1], c._data[2] = c._data[2], c._data[1]
+    end
 
-        # Request new data
-        c._requested = true
-        notify(c._condition)
+    # Now, leave one by one
+    ok = false
+    while !ok
+        _, ok = @atomicreplace(c._atomic_counter, Int8(id + 2) => Int(id + 3))
+    end
+
+    # Last but not least, reset!
+    if id == 2
+        @atomic c._atomic_counter = 1
     end
 end
 
-mutable struct GUIToSimulation
+simdata(c::SwapChannel) = c._data[1]
+guidata(c::SwapChannel) = c._data[2]
+
+#=
+Data that is communicated
+=#
+mutable struct CommunicationData
     terminate::Bool
     pause::Bool
-
     plot_type::Symbol
     inflow_altitude::Float64
     inflow_velocity::Float64
-
     new_wall::NTuple{2, Point2f}
     accomodation_coefficient::Float64
-
     delete_walls::Bool
     delete_particles::Bool
 
-    GUIToSimulation() = new(
+    particle_positions::Vector{Point2f}
+    mesh_values::Matrix{Float32}
+
+    object_points::Vector{Point2f} # Use this if many walls shall be drawn at once. This allocates memory!
+
+    CommunicationData() = new(
         false,
         true,
         :particles,
@@ -111,18 +130,15 @@ mutable struct GUIToSimulation
         (Point2{Float64}(NaN), Point2{Float64}(NaN)),
         DEFAULT_ACCOMODATION_COEFFICIENT,
         false,
-        false
+        false,
+        zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * (Threads.nthreads(:default))),
+        zeros(Float32, NUM_CELLS),
+        Point2f[]
     )
 end
 
-mutable struct SimulationToGUI
-    particle_positions::Vector{Point2f}
-    mesh_values::Matrix{Float32}
-    timing_data::TimingData
-
-    SimulationToGUI() = new(
-        zeros(Point2f, MAX_NUM_DISPLAY_PARTICLES),
-        zeros(Float32, NUM_CELLS),
-        TimingData()
-    )
+function raise_error(c::Union{Barrier, SwapChannel})
+    lock(c._condition) do
+        notify(c._condition; error=true)
+    end
 end

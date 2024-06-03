@@ -19,12 +19,13 @@ function setup_gui()
 
     setup_menu(scene, gui_data;
         pos=(display_size[1], 0) .+ BORDER_WIDTH .* (2, 1),
-        size=(MENU_WIDTH, display_size[2])
+        size=(MENU_WIDTH, display_size[2]),
+        display_size
     )
 
-    gui_data.screen = GLMakie.Screen(scene, start_renderloop=false)
+    gui_data.screen = GLMakie.Screen(scene, start_renderloop=false, focus_on_show=true)
     GLFW.make_fullscreen!(gui_data.screen.glscreen)
-    GLFW.SwapInterval(1) # 0?
+    GLFW.SwapInterval(1) # No VSync: 0
 
     return gui_data
 end
@@ -54,7 +55,7 @@ function setup_display(scene, gui_data; pos, size)
     # 2. Scatter plot for particles
     GLMakie.scatter!(display_scene, gui_data.particle_points;
         marker = GLMakie.FastPixel(),
-        markersize = 4,#2,
+        markersize = 2,#2,
         color = :black, # TODO color with velocity?
         visible = gui_data.display_particles
     )
@@ -62,7 +63,7 @@ function setup_display(scene, gui_data; pos, size)
     # 3. Lines for walls
     GLMakie.lines!(display_scene, gui_data.wall_points;
         linewidth = 2,
-        color = :blue
+        color = WALLS_COLOR
     )
 
     # 4. Create rounded edges
@@ -120,7 +121,7 @@ end
 ===========================================================================================
 =#
 
-function setup_menu(scene, gui_data; pos, size)
+function setup_menu(scene, gui_data; pos, size, display_size)
     # Settings Box
     settings_bbox = GLMakie.Rect(pos..., size...)
     GLMakie.Box(scene,
@@ -145,9 +146,14 @@ function setup_menu(scene, gui_data; pos, size)
     i = add_gap!(layout, 10, i)
     i = add_wall_block!(layout, gui_data, i)
     i = add_gap!(layout, 10, i)
-    i = add_menu_block!(layout, gui_data, i)
+    i = add_menu_block!(layout, gui_data, i, display_size)
     i = add_buttons!(layout, gui_data, i + 1)
-    add_gap!(layout, 50, i)
+    i = add_gap!(layout, 50, i)
+
+    GLMakie.Label(layout[i,:], "© Tobias Ott, Numerical Modeling and Simulation, Institute of Space Systems, University of Stuttgart",
+        fontsize = 8,
+        halign=:center
+    )
 end
 
 # -----------------------------------------------------------------------------------------
@@ -184,8 +190,28 @@ function add_logo!(scene, settings_bbox, layout, n)
     origin = settings_bbox.origin
     widths = settings_bbox.widths
 
+    logo = GLMakie.load("logos/irs.png")
+    logo_size = (510/397*60, 60)
+    img = GLMakie.image!(scene,
+        (origin[1] + widths[1]÷2 - 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
+        origin[2] - BORDER_WIDTH + widths[2] - 10 .+ (-logo_size[2], 0),
+        GLMakie.rotr90(logo)
+    )
+    GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
+
+    logo = GLMakie.load("logos/piclas.png")
+    # 1769 x 870
+    logo_size = (1769/870*60, 60)
+    #logo_size = 60
+    img = GLMakie.image!(scene,
+        (origin[1] + widths[1]÷2 + 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
+        origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size[2], 0),
+        GLMakie.rotr90(logo)
+    )
+    GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
+
+    logo = GLMakie.load("logos/particlas.png")
     logo_size = 100
-    logo = GLMakie.load("src/gui/logo.png")
     img = GLMakie.image!(scene,
         (origin[1] + widths[1]÷2) .+ (-0.5 * logo_size, 0.5 * logo_size),
         origin[2] - BORDER_WIDTH + widths[2] .+ (-logo_size, 0),
@@ -215,9 +241,9 @@ function add_inflow_block!(layout, gui_data, n)
     slidergrid = GLMakie.SliderGrid(layout[n,:],
         (
             label = "Altitude",
-            range = 80:120,
+            range = MIN_ALTITUDE:MAX_ALTITUDE,
             format = "",
-            startvalue = 80,
+            startvalue = DEFAULT_ALTITUDE,
             linewidth = SLIDER_LINE_WIDTH,
             snap=false,
             color_inactive=SLIDER_COLOR_RIGHT,
@@ -225,9 +251,9 @@ function add_inflow_block!(layout, gui_data, n)
             color_active=SLIDER_COLOR_CIRCLE
         ),(
             label = "Velocity",
-            range = 5000:10000,
+            range = MIN_VELOCITY:MAX_VELOCITY,
             format = "",
-            startvalue = 5000,
+            startvalue = DEFAULT_VELOCITY,
             linewidth = SLIDER_LINE_WIDTH,
             snap=false,
             color_inactive=SLIDER_COLOR_RIGHT,
@@ -283,7 +309,7 @@ function add_wall_block!(layout, gui_data, n)
 end
 
 # -----------------------------------------------------------------------------------------
-function  add_menu_block!(layout, gui_data, n)
+function  add_menu_block!(layout, gui_data, n, display_size)
     GLMakie.Label(layout[n,:], "Plotting",
         fontsize = SECTION_FONTSIZE,
         halign=:left
@@ -313,12 +339,54 @@ function  add_menu_block!(layout, gui_data, n)
             fontsize = CONTENT_FONTSIZE,
             halign=:left
         ),
-        menu
+        menu,
     )
+
+    n += 1
+
+    # TODO Add examples here!
+    examples_files = ["triangle.jl", "square.jl", "capsule.jl"]
+    examples_options = ["Triangle", "Square", "Capsule"]
+    examples = GLMakie.Menu(
+        layout[n,:],
+        dropdown_arrow_size = CONTENT_FONTSIZE*2÷3,
+        options = examples_options,
+        default = examples_options[1],
+        fontsize = CONTENT_FONTSIZE,
+        cell_color_active=MENU_COLOR_ACTIVE,
+        cell_color_hover=MENU_COLOR_HOVER,
+        cell_color_inactive_even=MENU_COLOR_EVEN,
+        cell_color_inactive_odd=MENU_COLOR_ODD,
+        selection_cell_color_inactive=MENU_COLOR_INACTIVE
+        # dropdown_arrow_color=
+    )
+
+    layout[n,:] = GLMakie.hgrid!(
+        GLMakie.Label(layout[n,:], "Draw",
+            fontsize = CONTENT_FONTSIZE,
+            halign=:left
+        ),
+        examples,
+    )
+
 
     GLMakie.on(menu.selection) do _
         gui_data.display_particles[] = menu.i_selected[] == 1
         gui_data.plot_type = symbols[menu.i_selected[]]
+    end
+
+    GLMakie.on(examples.selection) do _
+        include("examples/" * examples_files[examples.i_selected[]])
+        for pt in object_points
+            push!(gui_data.wall_points[], pt .* display_size ./ MESH_LENGTH)
+        end
+        push!(gui_data.wall_points[], Point2f(NaN))
+        notify(gui_data.wall_points)
+
+        gui_data.object_points = object_points
+        #for
+        # TODO cannot add walls at once. Do it like this: add wall one by one until all walls are added.
+
     end
 
     return n + 1
