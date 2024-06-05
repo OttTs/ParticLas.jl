@@ -1,5 +1,5 @@
 # TODO relative position towards the center?
-object_points = begin
+function draw_capsule()
     pts = Point2f[]
     ϕₘₐₓ = 20 / 180 * π
     r = 0.4
@@ -11,3 +11,4 @@ object_points = begin
     push!(pts, Point2f(0.65 + r * (0.6 - cos(-ϕₘₐₓ)), 0.5 + r * sin(-ϕₘₐₓ)))
     return pts
 end
+object_points = draw_capsule()

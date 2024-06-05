@@ -1,5 +1,5 @@
 # Random points
-object_points = begin
+function draw_random()
     pts = Point2f[]
     for i in 1:10
         φ = 2π * i / 10
@@ -9,3 +9,4 @@ object_points = begin
     push!(pts, pts[1])
     return pts
 end
+object_points = draw_random()
