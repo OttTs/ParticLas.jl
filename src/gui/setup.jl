@@ -287,7 +287,7 @@ function add_inflow_block!(layout, gui_data, n)
         gui_data.inflow_velocity = velocity
 
         gui_data.plot_type == :u && (gui_data.colorrange[] = (0, velocity))
-        gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * velocity^2 / (3BOLTZMANN_CONST) + 600)) # TODO gui_data.temperature
+        gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * velocity^2 / (3BOLTZMANN_CONST) + 1000)) # TODO gui_data.temperature
     end
 
     return n + 1
@@ -389,7 +389,7 @@ function  add_menu_block!(layout, gui_data, n, display_size)
 
         gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 15 * gui_data.inflow_altitude))
         gui_data.plot_type == :u && (gui_data.colorrange[] = (0, gui_data.inflow_velocity))
-        gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * gui_data.inflow_velocity^2 / (3BOLTZMANN_CONST) + 600)) # TODO gui_data.temperature
+        gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * gui_data.inflow_velocity^2 / (3BOLTZMANN_CONST) + 1000)) # TODO gui_data.temperature
     end
 
     return n + 1

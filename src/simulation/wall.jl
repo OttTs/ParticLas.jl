@@ -17,7 +17,7 @@ mutable struct WallCondition
 end
 
 function set!(c::WallCondition, accomodation_coefficient, species)
-    temperature = 600 # TODO wall temperature
+    temperature = 1000 # TODO wall temperature
     c.most_probable_velocity = √(2 * BOLTZMANN_CONST * temperature / species.mass)
     c.accomodation_coefficient = accomodation_coefficient
 end
