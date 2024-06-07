@@ -1,4 +1,10 @@
-function setup_gui(particlas_path)
+function setup_gui(lang, particlas_path)
+    if lang in ("german", "German", "g", "G", "deutsch", "Deutsch", "d", "D")
+        include(particlas_path * "languages/german.jl")
+    else
+        include(particlas_path * "languages/english.jl")
+    end
+
     gui_data = GUIData()
 
     # Get Window size and create Scene
@@ -237,7 +243,7 @@ end
 
 # -----------------------------------------------------------------------------------------
 function add_inflow_block!(layout, gui_data, n)
-    GLMakie.Label(layout[n,:], "Inflow Conditions",
+    GLMakie.Label(layout[n,:], LANG_INFLOW_CONDITIONS,
         fontsize = SECTION_FONTSIZE,
         halign=:left
     )
@@ -246,7 +252,7 @@ function add_inflow_block!(layout, gui_data, n)
 
     slidergrid = GLMakie.SliderGrid(layout[n,:],
         (
-            label = "Altitude",
+            label = LANG_ALTITUDE,
             range = MIN_ALTITUDE:MAX_ALTITUDE,
             format = "",
             startvalue = DEFAULT_ALTITUDE,
@@ -256,7 +262,7 @@ function add_inflow_block!(layout, gui_data, n)
             color_active_dimmed=SLIDER_COLOR_LEFT,
             color_active=SLIDER_COLOR_CIRCLE
         ),(
-            label = "Velocity",
+            label = LANG_VELOCITY,
             range = MIN_VELOCITY:MAX_VELOCITY,
             format = "",
             startvalue = DEFAULT_VELOCITY,
@@ -274,7 +280,7 @@ function add_inflow_block!(layout, gui_data, n)
         density = 1.225 * exp(-0.11856 * altitude)
         gui_data.inflow_altitude = density # TODO rename to inflow_density
 
-        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 20 * density))
+        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 15 * density))
     end
 
     GLMakie.on(slidergrid.sliders[2].value) do velocity
@@ -289,7 +295,7 @@ end
 
 # -----------------------------------------------------------------------------------------
 function add_wall_block!(layout, gui_data, n)
-    GLMakie.Label(layout[n,:], "Wall Interaction",
+    GLMakie.Label(layout[n,:], LANG_WALL_INTERACTION,
         fontsize = SECTION_FONTSIZE,
         halign=:left
     )
@@ -306,9 +312,9 @@ function add_wall_block!(layout, gui_data, n)
         color_active=SLIDER_COLOR_CIRCLE
     )
     layout[n,:] = GLMakie.hgrid!(
-        GLMakie.Label(layout[n,:], "Specular", fontsize=CONTENT_FONTSIZE),
+        GLMakie.Label(layout[n,:], LANG_SPECULAR, fontsize=CONTENT_FONTSIZE),
         accomodation_slider,
-        GLMakie.Label(layout[n,:], "Diffuse", fontsize=CONTENT_FONTSIZE)
+        GLMakie.Label(layout[n,:], LANG_DIFFUSE, fontsize=CONTENT_FONTSIZE)
     )
 
     GLMakie.on(accomodation_slider.value) do coefficient
@@ -322,7 +328,7 @@ end
 
 # -----------------------------------------------------------------------------------------
 function  add_menu_block!(layout, gui_data, n, display_size)
-    GLMakie.Label(layout[n,:], "Plotting",
+    GLMakie.Label(layout[n,:], LANG_PLOTTING,
         fontsize = SECTION_FONTSIZE,
         halign=:left
     )
@@ -330,7 +336,7 @@ function  add_menu_block!(layout, gui_data, n, display_size)
     n += 1
 
     symbols = [:particles, :ρ, :u, :T]
-    options = ["Particles", "Density", "Velocity", "Temperature"]
+    options = LANG_MENU_OPTIONS
 
     menu = GLMakie.Menu(
         layout[n,:],
@@ -347,7 +353,7 @@ function  add_menu_block!(layout, gui_data, n, display_size)
     )
 
     layout[n,:] = GLMakie.hgrid!(
-        GLMakie.Label(layout[n,:], "Display",
+        GLMakie.Label(layout[n,:], LANG_DISPLAY,
             fontsize = CONTENT_FONTSIZE,
             halign=:left
         ),
@@ -358,7 +364,7 @@ function  add_menu_block!(layout, gui_data, n, display_size)
         gui_data.display_particles[] = menu.i_selected[] == 1
         gui_data.plot_type = symbols[menu.i_selected[]]
 
-        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 20 * gui_data.inflow_altitude))
+        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 15 * gui_data.inflow_altitude))
         gui_data.plot_type == :u && (gui_data.colorrange[] = (0, gui_data.inflow_velocity))
         gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * gui_data.inflow_velocity^2 / (3BOLTZMANN_CONST) + 600)) # TODO gui_data.temperature
     end
@@ -369,7 +375,7 @@ end
 
 # -----------------------------------------------------------------------------------------
 function  add_object_buttons!(layout, gui_data, n, display_size; particlas_path)
-    GLMakie.Label(layout[n,:], "Shapes",
+    GLMakie.Label(layout[n,:], LANG_SHAPES,
         fontsize = CONTENT_FONTSIZE,
         halign=:left
     )
@@ -378,7 +384,7 @@ function  add_object_buttons!(layout, gui_data, n, display_size; particlas_path)
 
     layout[n,:] = buttongrid = GLMakie.GridLayout(tellwidth=false)
 
-    labels = ["Triangle" "Circle"; "Random" "Capsule"]
+    labels = LANG_SHAPE_LABELS
     shape_files = ["triangle.jl" "circle.jl"; "random.jl" "capsule.jl"]
     for i in 1:2, j in 1:2
         buttongrid[i,j] = button = GLMakie.Button(layout[n,:],
@@ -408,7 +414,7 @@ end
 # -----------------------------------------------------------------------------------------
 function add_buttons!(layout, gui_data, n)
     button_remove_walls = GLMakie.Button(layout[n,:],
-        label = "Remove Walls",
+        label = LANG_REMOVE_WALLS,
         fontsize = CONTENT_FONTSIZE,
         width = BUTTON_WIDTH,
         buttoncolor=BUTTON_COLOR_INACTIVE,
@@ -419,7 +425,7 @@ function add_buttons!(layout, gui_data, n)
     n += 1
 
     button_remove_particles = GLMakie.Button(layout[n,:],
-        label = "Remove Particles",
+        label = LANG_REMOVE_PARTICLES,
         fontsize = CONTENT_FONTSIZE,
         width = BUTTON_WIDTH,
         buttoncolor=BUTTON_COLOR_INACTIVE,

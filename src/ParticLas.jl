@@ -47,13 +47,18 @@ end
 # TODO num_threads is given by Threads.nthreads(:default)
 
 function julia_main()::Cint
-    run_particlas("")
+    if length(ARGS) ≥ 1
+        lang = ARGS[1]
+    end
+    run_particlas(lang, "")
     return 0
 end
 
-function run_particlas(particlas_path=string(split(pathof(ParticLas), "src")[1]))
+function run_particlas(lang="english", particlas_path=string(split(pathof(ParticLas), "src")[1]))
+
+
     mesh, species, time_step, barrier = setup_simulation()
-    gui_data = setup_gui(particlas_path)
+    gui_data = setup_gui(lang, particlas_path)
 
     channel = SwapChannel(CommunicationData)
 
