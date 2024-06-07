@@ -63,7 +63,7 @@ function setup_display(scene, gui_data; pos, size)
     # 2. Scatter plot for particles
     GLMakie.scatter!(display_scene, gui_data.particle_points;
         marker = GLMakie.FastPixel(),
-        markersize = 2,#2,
+        markersize = 3,#2,
         color = :black, # TODO color with velocity?
         visible = gui_data.display_particles
     )
