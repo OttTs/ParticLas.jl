@@ -282,7 +282,7 @@ function add_inflow_block!(layout, gui_data, n)
         density = 1.225 * exp(-0.11856 * altitude)
         gui_data.inflow_altitude = density # TODO rename to inflow_density
 
-        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 15 * density))
+        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 5 * density))
     end
 
     GLMakie.on(slidergrid.sliders[2].value) do velocity
@@ -324,7 +324,7 @@ function add_wall_block!(layout, gui_data, n)
     toggle = GLMakie.Toggle(layout[n,:],
         active=true,
         height = SLIDER_LINE_WIDTH / 0.66,
-        width = SLIDER_LINE_WIDTH * 2.3,
+        width = SLIDER_LINE_WIDTH * 2.5,
         framecolor_active=SLIDER_COLOR_LEFT,
         framecolor_inactive=SLIDER_COLOR_RIGHT,
         buttoncolor=SLIDER_COLOR_CIRCLE
@@ -389,7 +389,7 @@ function  add_menu_block!(layout, gui_data, n, display_size)
         gui_data.display_particles[] = menu.i_selected[] == 1
         gui_data.plot_type = symbols[menu.i_selected[]]
 
-        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 15 * gui_data.inflow_altitude))
+        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 5 * gui_data.inflow_altitude))
         gui_data.plot_type == :u && (gui_data.colorrange[] = (0, gui_data.inflow_velocity))
         gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * gui_data.inflow_velocity^2 / (3BOLTZMANN_CONST) + 1000)) # TODO gui_data.temperature
     end

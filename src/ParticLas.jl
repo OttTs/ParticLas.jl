@@ -42,6 +42,7 @@ function create_app(dst=nothing)
     )
     cp(pkg_path * "/logos", dst * "/bin/logos")
     cp(pkg_path * "/examples", dst * "/bin/examples")
+    cp(pkg_path * "/languages", dst * "/bin/languages")
 end
 
 # TODO num_threads is given by Threads.nthreads(:default)
