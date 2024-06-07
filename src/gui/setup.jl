@@ -43,7 +43,7 @@ end
 
 function setup_display(scene, gui_data; pos, size)
     display_scene = GLMakie.Scene(scene,
-        viewport=GLMakie.Rect(pos..., size...),
+        px_area=GLMakie.Rect(pos..., size...),
         backgroundcolor=DISPLAY_BACKGROUND_COLOR,
         clear=true
     )
@@ -148,16 +148,20 @@ function setup_menu(scene, gui_data; pos, size, display_size, particlas_path)
     GLMakie.colsize!(layout, 1, GLMakie.Fixed(size[1] - 2 * SETTINGS_BORDER_WIDTH))
 
     add_close_button!(scene, gui_data, settings_bbox)
+
+    i =1
     i = add_logo!(scene, settings_bbox, layout, 1; particlas_path)
-    i = add_gap!(layout, 10, i)
+    #i = add_gap!(layout, 2, i)
     i = add_inflow_block!(layout, gui_data, i)
-    i = add_gap!(layout, 10, i)
+    #i = add_gap!(layout, 2, i)
     i = add_wall_block!(layout, gui_data, i)
-    i = add_gap!(layout, 10, i)
+    #i = add_gap!(layout, 2, i)
     i = add_menu_block!(layout, gui_data, i, display_size)
     i = add_object_buttons!(layout, gui_data, i, display_size; particlas_path)
     i = add_buttons!(layout, gui_data, i + 1)
-    i = add_gap!(layout, 50, i)
+
+    i+=1
+    #i = add_gap!(layout, 25, i)
 
     GLMakie.Label(layout[i,:], "© Tobias Ott, Numerical Modeling and Simulation, Institute of Space Systems, University of Stuttgart",
         fontsize = 8,
@@ -199,14 +203,11 @@ function add_logo!(scene, settings_bbox, layout, n; particlas_path)
     origin = settings_bbox.origin
     widths = settings_bbox.widths
 
-    # TODO which path?
-    # TODO 1. Copy Logos to bin, 2. Path needs to be known here
-
     logo = GLMakie.load(particlas_path * "logos/irs.png")
     logo_size = (510/397*60, 60)
     img = GLMakie.image!(scene,
-        (origin[1] + widths[1]÷2 - 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
-        origin[2] - BORDER_WIDTH + widths[2] - 10 .+ (-logo_size[2], 0),
+        range(((origin[1] + widths[1]÷2 - 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]))...),
+        range((origin[2] - BORDER_WIDTH + widths[2] - 10 .+ (-logo_size[2], 0))...),
         GLMakie.rotr90(logo)
     )
     GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
@@ -216,8 +217,8 @@ function add_logo!(scene, settings_bbox, layout, n; particlas_path)
     logo_size = (1769/870*60, 60)
     #logo_size = 60
     img = GLMakie.image!(scene,
-        (origin[1] + widths[1]÷2 + 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
-        origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size[2], 0),
+        range(((origin[1] + widths[1]÷2 + 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]))...),
+        range((origin[2] - BORDER_WIDTH + widths[2] - 20 .+ (-logo_size[2], 0))...),
         GLMakie.rotr90(logo)
     )
     GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
@@ -225,18 +226,19 @@ function add_logo!(scene, settings_bbox, layout, n; particlas_path)
     logo = GLMakie.load(particlas_path * "logos/particlas.png")
     logo_size = 100
     img = GLMakie.image!(scene,
-        (origin[1] + widths[1]÷2) .+ (-0.5 * logo_size, 0.5 * logo_size),
-        origin[2] - BORDER_WIDTH + widths[2] .+ (-logo_size, 0),
+        range(((origin[1] + widths[1]÷2) .+ (-0.5 * logo_size, 0.5 * logo_size))...),
+        range((origin[2] - BORDER_WIDTH + widths[2] .+ (-logo_size, 0))...),
         GLMakie.rotr90(logo)
     )
     GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
 
     # Fix: Offset for Image...
+    logo_size = 100
     GLMakie.Box(layout[n,:],
         color=:transparent,
         strokewidth=0,
         height=logo_size+BORDER_WIDTH
-        )
+    )
 
     return n + 1
 end
