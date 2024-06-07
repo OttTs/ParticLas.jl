@@ -49,7 +49,8 @@ function setup_display(scene, gui_data; pos, size)
         collect(range(1, size[2], length=NUM_CELLS[2])),
         gui_data.mesh_values;
         interpolate = true,
-        colormap = :afmhot,
+        colormap = :ice,#:afmhot,
+        colorrange = gui_data.colorrange,
         visible =  GLMakie.@lift(!$(gui_data.display_particles))
     )
 
@@ -270,11 +271,17 @@ function add_inflow_block!(layout, gui_data, n)
     slidergrid.labels[2].fontsize[] = CONTENT_FONTSIZE
 
     GLMakie.on(slidergrid.sliders[1].value) do altitude
-        gui_data.inflow_altitude = altitude
+        density = 1.225 * exp(-0.11856 * altitude)
+        gui_data.inflow_altitude = density # TODO rename to inflow_density
+
+        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 20 * density))
     end
 
     GLMakie.on(slidergrid.sliders[2].value) do velocity
         gui_data.inflow_velocity = velocity
+
+        gui_data.plot_type == :u && (gui_data.colorrange[] = (0, velocity))
+        gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * velocity^2 / (3BOLTZMANN_CONST) + 600)) # TODO gui_data.temperature
     end
 
     return n + 1
@@ -350,6 +357,10 @@ function  add_menu_block!(layout, gui_data, n, display_size)
     GLMakie.on(menu.selection) do _
         gui_data.display_particles[] = menu.i_selected[] == 1
         gui_data.plot_type = symbols[menu.i_selected[]]
+
+        gui_data.plot_type == :ρ && (gui_data.colorrange[] = (0, 20 * gui_data.inflow_altitude))
+        gui_data.plot_type == :u && (gui_data.colorrange[] = (0, gui_data.inflow_velocity))
+        gui_data.plot_type == :T && (gui_data.colorrange[] = (0, MASS * gui_data.inflow_velocity^2 / (3BOLTZMANN_CONST) + 600)) # TODO gui_data.temperature
     end
 
     return n + 1

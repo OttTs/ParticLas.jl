@@ -6,6 +6,7 @@ mutable struct GUIData
     terminate::Bool
     pause::Bool
     plot_type::Symbol
+    colorrange::Observable{NTuple{2,Float64}}
     point_scaling::NTuple{2, Float64}
     inflow_altitude::Float64
     inflow_velocity::Float64
@@ -27,8 +28,9 @@ mutable struct GUIData
             false,
             true,
             :particles,
+            (1., 1.),
             (1, 1),
-            DEFAULT_ALTITUDE,
+            1.225 * exp(-0.11856 * DEFAULT_ALTITUDE),
             DEFAULT_VELOCITY,
             (Point2{Float64}(NaN), Point2{Float64}(NaN)),
             Point2f[],

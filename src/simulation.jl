@@ -10,7 +10,7 @@ include("simulation/movement.jl")
 
 function setup_simulation()
     mesh = Mesh(MESH_LENGTH, NUM_CELLS)
-    species = Species(3E15, 6.63E-26, 273, 0.77; ref_diameter=4.05E-10)
+    species = Species(WEIGHTING, MASS, REF_TEMP, REF_EXP; ref_diameter=REF_DIA)
     time_step = 1E-6
     barrier = Barrier()
     return mesh, species, time_step, barrier
@@ -90,10 +90,10 @@ function update_simulation_data!(mesh, species, channel_data)
         add!(mesh, Wall(start, stop))
     end
 
-    density = 1.225 * exp(-0.11856 * channel_data.inflow_altitude)
     set!(
         mesh.inflow_condition,
-        density,
+        #density,
+        channel_data.inflow_altitude, # TODO This is the density, rename to inflow_density
         channel_data.inflow_velocity,
         200, # TODO Variable inflow temperature?
         species

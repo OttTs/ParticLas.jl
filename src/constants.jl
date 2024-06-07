@@ -1,16 +1,15 @@
-const UNUSED_THREADS = 1 # I do not know what GLMakie/GLFW is doing...
+const UNUSED_THREADS = 1 # I do not know what GLMakie/GLFW/me is doing...
 
 const MAX_NUM_PARTICLES_PER_THREAD = 10^5
 const NUM_CELLS = (120, 80)
-const MESH_LENGTH = (1.2, 1)
 
 const MIN_ALTITUDE = 90
 const MAX_ALTITUDE = 120
-const DEFAULT_ALTITUDE = 90
+const DEFAULT_ALTITUDE = 105
 
 const MIN_VELOCITY = 5000
 const MAX_VELOCITY = 10000
-const DEFAULT_VELOCITY = 5000
+const DEFAULT_VELOCITY = 7500
 
 const DEFAULT_ACCOMODATION_COEFFICIENT = 0.0
 
@@ -18,6 +17,9 @@ const SCENE_CORNER_RADIUS = 20
 const MENU_WIDTH = 400
 const BORDER_WIDTH = 20
 const SETTINGS_BORDER_WIDTH=10
+
+# TODO This should not be a constant
+const MESH_LENGTH = ((1920-MENU_WIDTH-2*BORDER_WIDTH)/(1080-2*BORDER_WIDTH), 1)
 
 const SECTION_FONTSIZE = 30
 const CONTENT_FONTSIZE = 20
@@ -46,3 +48,10 @@ const WALLS_COLOR = RGBf(19/255, 51/255, 94/255)
 
 const FPS = 60
 const BOLTZMANN_CONST = 1.380649E-23
+
+# Species
+const WEIGHTING = 3E15
+const MASS = 6.63E-26
+const REF_TEMP = 273
+const REF_EXP = 0.77
+const REF_DIA = 4.05E-10
