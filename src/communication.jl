@@ -133,7 +133,7 @@ mutable struct CommunicationData
         DEFAULT_ACCOMODATION_COEFFICIENT,
         false,
         false,
-        zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * 2),#(Threads.nthreads(:default))),
+        zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * (Threads.nthreads(:default))),
         zeros(Float32, NUM_CELLS),
         Point2f[],
         true

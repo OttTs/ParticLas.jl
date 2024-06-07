@@ -60,15 +60,11 @@ end
 
 function send_data!(particles, mesh, channel, threadid)
     data = simdata(channel)
-    if data.plot_type == :particles && threadid <= 2
+    if data.plot_type == :particles
         index = threadid
         for i in eachindex(particles)
             data.particle_positions[index] = particles[i].position
-            index += 2#(Threads.nthreads(:default))
-        end
-        for i in length(particles)+1:maxlength(particles)
-            data.particle_positions[index] = Point2f(NaN32,NaN32)
-            index += 2#(Threads.nthreads(:default))
+            index += (Threads.nthreads(:default))
         end
     else
         for i in eachindex(mesh.cells, threadid)
