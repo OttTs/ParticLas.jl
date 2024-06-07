@@ -40,8 +40,8 @@ function create_app(dst=nothing)
         include_lazy_artifacts=true,
         force=true
     )
-    cp(pkg_path * "/logos", dst * "/bin")
-    cp(pkg_path * "/examples", dst * "/bin")
+    cp(pkg_path * "/logos", dst * "/bin/logos")
+    cp(pkg_path * "/examples", dst * "/bin/examples")
 end
 
 # TODO num_threads is given by Threads.nthreads(:default)
