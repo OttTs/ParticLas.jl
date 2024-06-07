@@ -15,6 +15,7 @@ mutable struct GUIData
     accomodation_coefficient::Float64
     delete_walls::Bool
     delete_particles::Bool
+    do_collisions::Bool
     screen::GLMakie.Screen{GLFW.Window}
 
     function GUIData()
@@ -36,7 +37,8 @@ mutable struct GUIData
             Point2f[],
             DEFAULT_ACCOMODATION_COEFFICIENT,
             false,
-            false
+            false,
+            true
         )
     end
 end

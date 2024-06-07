@@ -32,7 +32,7 @@ function simulation_thread(particles, mesh, species, time_step, barrier, channel
         # Collision Step
         relaxation_parameters!(mesh, species, time_step, threadid)
         synchronize!(barrier)
-        if !simdata(channel).pause
+        if !simdata(channel).pause && simdata(channel).do_collisions
             relax_particles!(particles, mesh)
             sum_up_particles!(particles, mesh, threadid)
             synchronize!(barrier)

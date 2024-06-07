@@ -121,6 +121,8 @@ mutable struct CommunicationData
 
     object_points::Vector{Point2f} # Use this if many walls shall be drawn at once. This allocates memory!
 
+    do_collisions::Bool
+
     CommunicationData() = new(
         false,
         true,
@@ -133,7 +135,8 @@ mutable struct CommunicationData
         false,
         zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * (Threads.nthreads(:default))),
         zeros(Float32, NUM_CELLS),
-        Point2f[]
+        Point2f[],
+        true
     )
 end
 

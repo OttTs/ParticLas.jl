@@ -317,8 +317,31 @@ function add_wall_block!(layout, gui_data, n)
         GLMakie.Label(layout[n,:], LANG_DIFFUSE, fontsize=CONTENT_FONTSIZE)
     )
 
+    n += 1
+
+    toggle = GLMakie.Toggle(layout[n,:],
+        active=true,
+        height = SLIDER_LINE_WIDTH / 0.66,
+        width = SLIDER_LINE_WIDTH * 2.3,
+        framecolor_active=SLIDER_COLOR_LEFT,
+        framecolor_inactive=SLIDER_COLOR_RIGHT,
+        buttoncolor=SLIDER_COLOR_CIRCLE
+    )
+    layout[n,:] = GLMakie.hgrid!(
+        GLMakie.Label(layout[n,:], LANG_COLLISIONS, fontsize=CONTENT_FONTSIZE),
+        toggle,
+        halign=:left,
+
+
+
+    )
+
     GLMakie.on(accomodation_slider.value) do coefficient
         gui_data.accomodation_coefficient = coefficient
+    end
+
+    GLMakie.on(toggle.active) do active
+        gui_data.do_collisions = active
     end
 
     # TODO add slider for wall temperature?

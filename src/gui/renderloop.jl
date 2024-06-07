@@ -37,7 +37,8 @@ function copy_data!(channel_data, gui_data::GUIData)
         :new_wall,
         :accomodation_coefficient,
         :delete_walls,
-        :delete_particles
+        :delete_particles,
+        :do_collisions
     )
     for i in fields
         setfield!(channel_data, i, getfield(gui_data, i))
