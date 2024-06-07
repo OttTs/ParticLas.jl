@@ -49,6 +49,8 @@ end
 function julia_main()::Cint
     if length(ARGS) ≥ 1
         lang = ARGS[1]
+    else
+        lang="egnlish"
     end
     run_particlas(lang, "")
     return 0
