@@ -1,6 +1,6 @@
 const UNUSED_THREADS = 1 # I do not know what GLMakie/GLFW/me is doing...
 
-const MAX_NUM_PARTICLES_PER_THREAD = 2*10^5
+const MAX_NUM_PARTICLES_PER_THREAD = 10^5
 const NUM_CELLS = (120, 80)
 
 const MIN_ALTITUDE = 90
