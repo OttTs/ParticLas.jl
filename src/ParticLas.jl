@@ -32,25 +32,28 @@ julia> create_app("C:\\Program Files\\ParticLasApp")
 ```
 """
 function create_app(dst=nothing)
-    pkg_path = string(split(pathof(ParticLas), "src")[1])
-    isnothing(dst) && (dst = string(pkg_path, "ParticLasApp"))
+    pkg_path = string(split(pathof(ParticLas), "/src")[1])
+    isnothing(dst) && (dst = string(pkg_path, "/ParticLasApp"))
+    dst = string(rstrip(dst, '/'))
     PackageCompiler.create_app(pkg_path, dst,
-        precompile_execution_file="precompile.jl",
+        precompile_execution_file=pkg_path * "/precompile.jl",
         include_lazy_artifacts=true,
         force=true
     )
+    cp(pkg_path * "/logos", dst * "/bin")
+    cp(pkg_path * "/examples", dst * "/bin")
 end
 
 # TODO num_threads is given by Threads.nthreads(:default)
 
 function julia_main()::Cint
-    run_particlas()
+    run_particlas("")
     return 0
 end
 
-function run_particlas()
+function run_particlas(particlas_path=string(split(pathof(ParticLas), "src")[1]))
     mesh, species, time_step, barrier = setup_simulation()
-    gui_data = setup_gui()
+    gui_data = setup_gui(particlas_path)
 
     channel = SwapChannel(CommunicationData)
 

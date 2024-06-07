@@ -1,4 +1,4 @@
-function setup_gui()
+function setup_gui(particlas_path)
     gui_data = GUIData()
 
     # Get Window size and create Scene
@@ -20,7 +20,8 @@ function setup_gui()
     setup_menu(scene, gui_data;
         pos=(display_size[1], 0) .+ BORDER_WIDTH .* (2, 1),
         size=(MENU_WIDTH, display_size[2]),
-        display_size
+        display_size,
+        particlas_path
     )
 
     gui_data.screen = GLMakie.Screen(scene, start_renderloop=false, focus_on_show=true)
@@ -121,7 +122,7 @@ end
 ===========================================================================================
 =#
 
-function setup_menu(scene, gui_data; pos, size, display_size)
+function setup_menu(scene, gui_data; pos, size, display_size, particlas_path)
     # Settings Box
     settings_bbox = GLMakie.Rect(pos..., size...)
     GLMakie.Box(scene,
@@ -140,14 +141,14 @@ function setup_menu(scene, gui_data; pos, size, display_size)
     GLMakie.colsize!(layout, 1, GLMakie.Fixed(size[1] - 2 * SETTINGS_BORDER_WIDTH))
 
     add_close_button!(scene, gui_data, settings_bbox)
-    i = add_logo!(scene, settings_bbox, layout, 1)
+    i = add_logo!(scene, settings_bbox, layout, 1; particlas_path)
     i = add_gap!(layout, 10, i)
     i = add_inflow_block!(layout, gui_data, i)
     i = add_gap!(layout, 10, i)
     i = add_wall_block!(layout, gui_data, i)
     i = add_gap!(layout, 10, i)
     i = add_menu_block!(layout, gui_data, i, display_size)
-    i = add_object_buttons!(layout, gui_data, i, display_size)
+    i = add_object_buttons!(layout, gui_data, i, display_size; particlas_path)
     i = add_buttons!(layout, gui_data, i + 1)
     i = add_gap!(layout, 50, i)
 
@@ -187,11 +188,14 @@ function add_close_button!(scene, gui_data, settings_bbox)
 end
 
 # -----------------------------------------------------------------------------------------
-function add_logo!(scene, settings_bbox, layout, n)
+function add_logo!(scene, settings_bbox, layout, n; particlas_path)
     origin = settings_bbox.origin
     widths = settings_bbox.widths
 
-    logo = GLMakie.load("logos/irs.png")
+    # TODO which path?
+    # TODO 1. Copy Logos to bin, 2. Path needs to be known here
+
+    logo = GLMakie.load(particlas_path * "logos/irs.png")
     logo_size = (510/397*60, 60)
     img = GLMakie.image!(scene,
         (origin[1] + widths[1]÷2 - 125) .+ (-0.5 * logo_size[1], 0.5 * logo_size[1]),
@@ -200,7 +204,7 @@ function add_logo!(scene, settings_bbox, layout, n)
     )
     GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
 
-    logo = GLMakie.load("logos/piclas.png")
+    logo = GLMakie.load(particlas_path * "logos/piclas.png")
     # 1769 x 870
     logo_size = (1769/870*60, 60)
     #logo_size = 60
@@ -211,7 +215,7 @@ function add_logo!(scene, settings_bbox, layout, n)
     )
     GLMakie.translate!(img, (0, 0, 1)) # Put it in the foreground
 
-    logo = GLMakie.load("logos/particlas.png")
+    logo = GLMakie.load(particlas_path * "logos/particlas.png")
     logo_size = 100
     img = GLMakie.image!(scene,
         (origin[1] + widths[1]÷2) .+ (-0.5 * logo_size, 0.5 * logo_size),
@@ -353,7 +357,7 @@ end
 
 
 # -----------------------------------------------------------------------------------------
-function  add_object_buttons!(layout, gui_data, n, display_size)
+function  add_object_buttons!(layout, gui_data, n, display_size; particlas_path)
     GLMakie.Label(layout[n,:], "Shapes",
         fontsize = CONTENT_FONTSIZE,
         halign=:left
@@ -376,7 +380,7 @@ function  add_object_buttons!(layout, gui_data, n, display_size)
         )
 
         GLMakie.on(button.clicks) do _
-            include("examples/" * shape_files[i,j])
+            include(particlas_path * "examples/" * shape_files[i,j])
             for pt in object_points
                 push!(gui_data.wall_points[], pt .* display_size ./ MESH_LENGTH)
             end
