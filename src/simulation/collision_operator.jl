@@ -1,24 +1,27 @@
-function sum_up_particles!(particles, mesh, threadid)
+function sum_up_particles!(particles, mesh)
     # Reset moments
-    for i in eachindex(mesh.cells)
-        ∑ₚ = mesh.cells[i].raw_moments[threadid]
-        ∑ₚ.v⁰ = 0
-        ∑ₚ.v¹ = zero(typeof(∑ₚ.v¹))
-        ∑ₚ.v² = 0
-    end
+    @batch for threadid in 1:Threads.nthreads(:default)
+        for i in eachindex(mesh.cells)
+            ∑ₚ = mesh.cells[i].raw_moments[threadid]
+            ∑ₚ.v⁰ = 0
+            ∑ₚ.v¹ = zero(typeof(∑ₚ.v¹))
+            ∑ₚ.v² = 0
+        end
 
-    # Calculate new moments
-    for p in particles
-        ∑ₚ = mesh.cells[p.index].raw_moments[threadid]
-        ∑ₚ.v⁰ += 1
-        ∑ₚ.v¹ += p.velocity
-        ∑ₚ.v² += p.velocity ⋅ p.velocity
+        # Calculate new moments
+        for p in particles
+            ∑ₚ = mesh.cells[p.index].raw_moments[threadid]
+            ∑ₚ.v⁰ += 1
+            ∑ₚ.v¹ += p.velocity
+            ∑ₚ.v² += p.velocity ⋅ p.velocity
+        end
     end
 end
 
-function relaxation_parameters!(mesh, species, time_step, threadid)
-    for i in eachindex(mesh.cells, threadid)
-        cell = mesh.cells[i]
+function relaxation_parameters!(mesh, species, time_step)
+    mesh_cells = mesh.cells
+    @batch for i in eachindex(mesh_cells)
+        cell = mesh_cells[i]
 
         N, cell.bulk_velocity, σ² = calculate_moments(cell.raw_moments)
 
@@ -34,15 +37,15 @@ function relaxation_parameters!(mesh, species, time_step, threadid)
 end
 
 function relax_particles!(particles, mesh)
-    for p in particles
+    @batch for p in particles
         cell = mesh.cells[p.index]
         rand() > cell.relaxation_probability && continue
         p.velocity = cell.bulk_velocity + cell.scale_parameter * randn(typeof(p.velocity))
     end
 end
 
-function conservation_parameters!(mesh, threadid)
-    for i in eachindex(mesh.cells, threadid)
+function conservation_parameters!(mesh)
+    @batch for i in eachindex(mesh.cells)
         cell = mesh.cells[i]
         _, cell.tmp_bulk_velocity, σ² = calculate_moments(cell.raw_moments)
         cell.conservation_ratio = σ² <= 0 ? 0 : cell.scale_parameter / √(σ²)
@@ -50,7 +53,7 @@ function conservation_parameters!(mesh, threadid)
 end
 
 function conservation_step!(particles, mesh)
-    for p in particles
+    @batch for p in particles
         cell = mesh.cells[p.index]
         p.velocity = cell.bulk_velocity +
             cell.conservation_ratio * (p.velocity - cell.tmp_bulk_velocity)
