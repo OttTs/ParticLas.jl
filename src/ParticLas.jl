@@ -50,10 +50,16 @@ end
 function julia_main()::Cint
     if length(ARGS) ≥ 1
         lang = ARGS[1]
+        if length(ARGS) ≥ 2
+            pdir = ARGS[2]
+        else
+            pdir = ""
+        end
     else
         lang="english"
+        pdir = ""
     end
-    run_particlas(lang, "")
+    run_particlas(lang, pdir)
     return 0
 end
 
