@@ -1,11 +1,10 @@
-const UNUSED_THREADS = 1 # I do not know what GLMakie/GLFW/me is doing...
-
 const MAX_NUM_PARTICLES_PER_THREAD = 10^5
+const MAX_NUM_PARTICLES_VISU = 10^5#INT(MAX_NUM_PARTICLES_PER_THREAD/2)
 const NUM_CELLS = (120, 80)
 
-const MIN_ALTITUDE = 90
-const MAX_ALTITUDE = 120
-const DEFAULT_ALTITUDE = 105
+const MIN_ALTITUDE = 80
+const MAX_ALTITUDE = 110
+const DEFAULT_ALTITUDE = 95
 
 const MIN_VELOCITY = 5000
 const MAX_VELOCITY = 10000
@@ -50,7 +49,7 @@ const FPS = 60
 const BOLTZMANN_CONST = 1.380649E-23
 
 # Species
-const WEIGHTING = 3E15
+const WEIGHTING = 5E15
 const MASS = 6.63E-26
 const REF_TEMP = 273
 const REF_EXP = 0.77

@@ -24,7 +24,7 @@ mutable struct GUIData
         return new(
             Observable(true),
             Observable(zeros(NUM_CELLS)),
-            Observable(zeros(Point2f, MAX_NUM_PARTICLES_PER_THREAD * (Threads.nthreads(:default)))),
+            Observable(zeros(Point2f, MAX_NUM_PARTICLES_VISU)),
             wall_points,
             false,
             true,
