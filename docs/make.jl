@@ -1,4 +1,4 @@
-using Documenter, ParticLas
+using Documenter#, ParticLas
 
 makedocs(sitename="ParticLas Documentation")
 
