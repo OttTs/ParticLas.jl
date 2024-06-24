@@ -2,28 +2,28 @@
 
 ## Physical model
 In ParticLas, the (single species) BGK-Boltzmann equation
-$$
+```math
     \frac{\partial f}{\partial t} + v\cdot\frac{\partial f}{\partial x} = \frac{1}{\tau}(f_t - f)
-$$
+```
 is solved. Here, $f=f(x,v,t)$ is the density function at position $x$, velocity $v$ and time $t$. The right hand side is the so-called *BGK* collision operator, where $\tau$ is the *relaxation time* and $f_t$ is the target distribution function.
 In the original BGK model, the target distribution function is a simple Maxwellian distribution defined by the number density $n$, the macroscopic velocity $u$ and the temperature $T$.
 
 ## Numerical model
 The density function is approximated by a large number of simulation particles
-$$
+```math
     f(x,v,t)\approx\sum_p{\omega_p\delta(x-x_p)\delta(v-v_p)}.
-$$
+```
 Each particle is defined by its position $x_p$ and velocity $v_p$. The *weighting factor* $\omega_p$ defines, how many "physical" particles are represented by a single simulation particle. Since there is a huge number of particles in reality, this weighting factor is set to a fairly large number ($\omega_p=5\cdot 10^{15}$ in ParticLas).
 
 ### Time stepping
 When using particles to solve the Boltzmann equation, one usually splits the equation into a movement operator
-$$
+```math
     \frac{\partial f}{\partial t} + v\cdot\frac{\partial f}{\partial x} = 0
-$$
+```
 and a collision operator
-$$
+```math
     \frac{\partial f}{\partial t} = \frac{1}{\tau}(f_t - f)
-$$
+```
 that are solved successively.
 This procedure is often called *Operator splitting*.
 
@@ -36,16 +36,16 @@ The density defines the actual number of particles inserted in each time step.
 The two sliders in ParticLas directly set the velocity and density of the inflow distribution.
 The velocity can be set between $5000\,\mathrm{m}/\mathrm{s}$ and $10000\,\mathrm{m}/\mathrm{s}$.
 The density is calculated from the altitude $h$
-$$
+```math
     \rho = 1.225\,\frac{\mathrm{kg}}{\mathrm{m}^3} \cdot \exp\left(-0.11856\,\frac{1}{\mathrm{m}} \cdot h\right)
-$$
+```
 where the altitude can be set between $90\,\mathrm{km}$ and $120\,\mathrm{km}$.
 
 ### Particle movement
 In the movement step, the particle positions are updated by a simple push:
-$$
+```math
     x_p^{new} = x_p + \Delta t v_p
-$$
+```
 However, during that push, the particle may cross either a wall or a free-stream boundary (out-/inflow).
 If it hits a wall, it is reflected according to the specific boundary conditions and pushed for the remaining time step.
 If it crosses a free-stream boundary, it is deleted.
