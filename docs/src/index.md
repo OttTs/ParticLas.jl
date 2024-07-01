@@ -5,18 +5,18 @@ In ParticLas, the (single species) BGK-Boltzmann equation
 ```math
     \frac{\partial f}{\partial t} + v\cdot\frac{\partial f}{\partial x} = \frac{1}{\tau}(f_t - f)
 ```
-is solved. Here, $f=f(x,v,t)$ is the density function at position $x$, velocity $v$ and time $t$. The right hand side is the so-called *BGK* collision operator, where $\tau$ is the *relaxation time* and $f_t$ is the target distribution function.
+is solved. Here, $f=f(x,v,t)$ is the density function at position $x$, velocity $v$ and time $t$. The right hand side is the *BGK* collision operator, where $\tau$ is the *relaxation time* and $f_t$ is the target distribution function.
 In the original BGK model, the target distribution function is a simple Maxwellian distribution defined by the number density $n$, the macroscopic velocity $u$ and the temperature $T$.
 
 ## Numerical model
-The density function is approximated by a large number of simulation particles
+The density function is approximated using a large number of simulation particles:
 ```math
     f(x,v,t)\approx\sum_p{\omega_p\delta(x-x_p)\delta(v-v_p)}.
 ```
-Each particle is defined by its position $x_p$ and velocity $v_p$. The *weighting factor* $\omega_p$ defines, how many "physical" particles are represented by a single simulation particle. Since there is a huge number of particles in reality, this weighting factor is set to a fairly large number ($\omega_p=5\cdot 10^{15}$ in ParticLas).
+Each particle is defined by its position $x_p$ and velocity $v_p$. The *weighting factor* $\omega_p$ defines, how many "physical" particles are represented by a single simulation particle. Given the vast number of particles in reality, this weighting factor is set to a fairly large number ($\omega_p=5\cdot 10^{15}$ in ParticLas).
 
 ### Time stepping
-When using particles to solve the Boltzmann equation, one usually splits the equation into a movement operator
+The Boltzmann equation is solved using an operator splitting method, dividing it into a movement operator
 ```math
     \frac{\partial f}{\partial t} + v\cdot\frac{\partial f}{\partial x} = 0
 ```
@@ -24,8 +24,7 @@ and a collision operator
 ```math
     \frac{\partial f}{\partial t} = \frac{1}{\tau}(f_t - f)
 ```
-that are solved successively.
-This procedure is often called *Operator splitting*.
+The two equations are solved successively.
 
 ## Movement Step
 ### Particle insertion
@@ -80,10 +79,31 @@ However, due to the limited number of particles, an additional step that forces 
 | Time step | $10^{-6}\,\mathrm{s}$
 
 ## Limitations & Simplifications
-1. Zu großer Zeitschritt
-2. Große Zellen / Wenige Partikel
-3. 2D Rechnung (NICHT achsensymmetrisch)
-4. Einfacher Kollisionsoperator
-5. Wände beeinflussen Berechnung der Makroskopischen größen nicht
-6. Einfaches Wandinteraktionsmodell
-7. Nur eine (neutrale) Spezies, keine Reaktionen
+In order to run the simulation with 60fps, many simplifications have to be made
+
+### 1. Time step
+The time step in ParticLas is fixed.
+This may be an issue in the shock region, since the density is quite high.
+In order to resolve the shock, a smaller time step is probably necessary.
+This high time step may lead to a bigger distance between the shock and walls.
+
+### 2. Cell size and particle number
+The relatively large cell size may not be able to capture all gradients, especially where the density is quite high.
+Also, the high particle weighting leads to fewer simulation particles which also introduces some error.
+
+### 3. 2D Simulation
+In ParticLas, the Boltzmann equation on a flat two-dimensional domain is solved.
+In reality, this would correspond to a body that is stretched infinitely in the third dimension.
+Of course, this assumption is only rarely useful.
+
+### 4. Collision operator
+The standard BGK operator, which is used to approximate the Boltzmann collision integral, is known to have a fixed Knudsen number $Kn=1$.
+This is a rather rough approximation when accuracy is needed.
+
+### 5. Walls do not split the cells
+When calculating the macroscopic values in the cells, it is not taken into account if there are walls inside the cell.
+For example, a wall may split a cell in half. Even if there are many particles to the left of the wall and only one to the right, there would still be a single macroscopic value for all particles.
+When looking at the heatmap plots (density, velocity, temperature), this can be seen.
+
+### 6. Single species
+In ParticLas, only a single species (Argon) is used.
