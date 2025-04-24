@@ -1,34 +1,48 @@
-mutable struct InflowCondition
-    number_flux::Float64 # per thread!
+struct InflowBC
+    number_flux::Float64
     velocity::Float64
     most_probable_velocity::Float64
-    InflowCondition() = new(0, 0, 0)
-end
 
-function set!(c::InflowCondition, density, velocity, temperature, species)
-    c.velocity = velocity
-    c.most_probable_velocity = √(2 * BOLTZMANN_CONST * temperature / species.mass)
+    function InflowBC(ρ, u, T, species)
+        m, ω = species.mass, species.weighting
 
-    ratio = velocity / c.most_probable_velocity
-    mass_flux = 0.5 * (velocity * (erf(ratio) + 1) +
-        c.most_probable_velocity / √π * exp(-(ratio)^2)) * density
-    c.number_flux = mass_flux / (species.mass * species.weighting)
+        uₘₚ = √(2 * BOLTZMANN_CONST * T / m)
+        r = u / uₘₚ
+        ṁ = 0.5 * (u * (erf(r) + 1) + uₘₚ / √π * exp(-(r)^2)) * ρ
+        ṅ = ṁ / (m * ω)
+        return new(ṅ, u, uₘₚ)
+    end
 end
 
 function insert_particles!(particles, mesh, time_step)
-    ic = mesh.inflow_condition
-    num_new_particles = stochastic_round(
-        ic.number_flux * mesh.length[2] * time_step / (Threads.nthreads(:default))
-    )
-    for _ in 1:num_new_particles
-        isfull(particles) && break
+    inflow_bc = mesh.inflow_bc[]
+    xₚ, vₚ, Iₚ, free_indices = particles.position, particles.velocity, particles.index, particles.free_indices
 
-        p = additem!(particles)
-        p.position = Point2{Float64}(0, rand() * mesh.length[2])
-        p.velocity = sample_inflow_velocity(ic.most_probable_velocity, ic.velocity)
-        p.index = index(p.position, mesh)
+    # Calculate number of particles to insert
+    num_new_particles = stochastic_round(inflow_bc.number_flux * mesh.length[2] * time_step)
+
+    # Find empty indices in the particle vector to insert new particles
+    num_new_particles = find_empty_indices!(particles, num_new_particles)
+
+    # Insert new particles
+    @batch for i in 1:num_new_particles
+        xₚ[free_indices[i]] = eltype(xₚ)(0, rand() * mesh.length[2])
+        vₚ[free_indices[i]] = sample_inflow_velocity(inflow_bc.most_probable_velocity, inflow_bc.velocity)
+        Iₚ[free_indices[i]] = index(xₚ[free_indices[i]], mesh)
 
         # Move back for a fraction of a time step to avoid particle clumping together
-        p.position = p.position - rand() * time_step * Vec2{Float64}(p.velocity)
+        xₚ[free_indices[i]] -= rand() * time_step * Vec2{Float64}(vₚ[free_indices[i]])
     end
+end
+
+function find_empty_indices!(particles, num_new_particles)
+    num_free = 0
+    for i in eachindex(particles.index)
+        if particles.index[i][1] == -1
+            num_free += 1
+            particles.free_indices[num_free] = i
+            num_free == num_new_particles && break
+        end
+    end
+    return num_free
 end

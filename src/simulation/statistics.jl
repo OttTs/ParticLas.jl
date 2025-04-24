@@ -1,4 +1,4 @@
-function sample_inflow_velocity(most_probable_velocity, velocity=0)
+function sample_inflow_velocity(most_probable_velocity, velocity=zero(Float64))
     zs = samplezs(velocity / most_probable_velocity)
     return Vec3(
         velocity - zs * most_probable_velocity,

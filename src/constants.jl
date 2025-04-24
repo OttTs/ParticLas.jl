@@ -1,7 +1,22 @@
-const MAX_NUM_PARTICLES_PER_THREAD = 10^5
-const MAX_NUM_PARTICLES_VISU = 10^5#INT(MAX_NUM_PARTICLES_PER_THREAD/2)
+# =================================================================================================
+# Simulation parameters
+# =================================================================================================
+const MAX_NUM_PARTICLES = 10^6
 const NUM_CELLS = (120, 80)
 
+# Species parameters
+const WEIGHTING = 5E15
+const MASS = 6.63E-26
+const REF_TEMP = 273
+const REF_EXP = 0.77
+const REF_DIA = 4.05E-10
+
+const BOLTZMANN_CONST = 1.380649E-23
+
+# =================================================================================================
+# GUI parameters
+# =================================================================================================
+# Inflow settings
 const MIN_ALTITUDE = 90
 const MAX_ALTITUDE = 120
 const DEFAULT_ALTITUDE = 105
@@ -11,6 +26,11 @@ const MAX_VELOCITY = 10000
 const DEFAULT_VELOCITY = 7500
 
 const DEFAULT_ACCOMODATION_COEFFICIENT = 0.0
+
+# Dimensions
+
+
+# Colors
 
 const SCENE_CORNER_RADIUS = 20
 const MENU_WIDTH = 400
@@ -28,29 +48,21 @@ const MENU_BACKGROUND_COLOR = RGBf(0.8, 0.9, 1)
 const DISPLAY_BACKGROUND_COLOR = RGBf(1, 1, 1)
 
 const SLIDER_LINE_WIDTH = 20
-const SLIDER_COLOR_RIGHT = RGBf(100/255, 150/255, 200/255)#RGBf(88/255, 176/255, 181/255)
-const SLIDER_COLOR_LEFT = RGBf(67/255, 100/255, 140/255)#RGBf(67/255, 120/255, 169/255)
+const SLIDER_COLOR_RIGHT = RGBf(100/255, 150/255, 200/255)
+const SLIDER_COLOR_LEFT = RGBf(67/255, 100/255, 140/255)
 const SLIDER_COLOR_CIRCLE = RGBf(19/255, 51/255, 94/255)
 
-const MENU_COLOR_ACTIVE = RGBf(67/255, 100/255, 140/255)#RGBf(88/255, 176/255, 181/255)
-const MENU_COLOR_HOVER = RGBf(67/255, 100/255, 140/255)#RGBf(88/255, 176/255, 181/255)
-const MENU_COLOR_EVEN = RGBf(100/255, 150/255, 200/255)#RGBf(205/255, 229/255, 236/255)
-const MENU_COLOR_ODD = RGBf(100/255, 150/255, 200/255)#RGBf(205/255, 229/255, 236/255)
-const MENU_COLOR_INACTIVE = RGBf(100/255, 150/255, 200/255)#RGBf(205/255, 229/255, 236/255)
+const MENU_COLOR_ACTIVE = RGBf(67/255, 100/255, 140/255)
+const MENU_COLOR_HOVER = RGBf(67/255, 100/255, 140/255)
+const MENU_COLOR_EVEN = RGBf(100/255, 150/255, 200/255)
+const MENU_COLOR_ODD = RGBf(100/255, 150/255, 200/255)
+const MENU_COLOR_INACTIVE = RGBf(100/255, 150/255, 200/255)
 
 const BUTTON_WIDTH = 250
-const BUTTON_COLOR_INACTIVE = RGBf(100/255, 150/255, 200/255)#RGBf(205/255, 229/255, 236/255)
+const BUTTON_COLOR_INACTIVE = RGBf(100/255, 150/255, 200/255)
 const BUTTON_COLOR_ACTIVE = RGBf(19/255, 51/255, 94/255)
-const BUTTON_COLOR_HOVER = RGBf(67/255, 100/255, 140/255)#RGBf(88/255, 176/255, 181/255)
+const BUTTON_COLOR_HOVER = RGBf(67/255, 100/255, 140/255)
 
 const WALLS_COLOR = RGBf(19/255, 51/255, 94/255)
 
 const FPS = 60
-const BOLTZMANN_CONST = 1.380649E-23
-
-# Species
-const WEIGHTING = 5E15
-const MASS = 6.63E-26
-const REF_TEMP = 273
-const REF_EXP = 0.77
-const REF_DIA = 4.05E-10

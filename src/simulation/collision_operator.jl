@@ -1,94 +1,78 @@
-function sum_up_particles!(particles, mesh, threadid)
-    # Reset moments
-    for i in eachindex(mesh.cells)
-        ∑ₚ = mesh.cells[i].raw_moments[threadid]
-        ∑ₚ.v⁰ = 0
-        ∑ₚ.v¹ = zero(typeof(∑ₚ.v¹))
-        ∑ₚ.v² = 0
+function sum_up_particles!(particles, mesh)
+    ∑v⁰, ∑v¹, ∑v² = mesh.∑∑v⁰, mesh.∑v¹, mesh.∑v²
+    Iₚ, vₚ = particles.index, particles.velocity
+
+    @batch for I in eachindex(∑v⁰)
+        ∑v⁰[I] = zero(eltype(∑v⁰))
+        ∑v¹[I] = zero(eltype(∑v¹))
+        ∑v²[I] = zero(eltype(∑v²))
     end
 
-    # Calculate new moments
-    for p in particles
-        ∑ₚ = mesh.cells[p.index].raw_moments[threadid]
-        ∑ₚ.v⁰ += 1
-        ∑ₚ.v¹ += p.velocity
-        ∑ₚ.v² += p.velocity ⋅ p.velocity
+    @batch for i in eachindex(Iₚ)
+        Iₚ[i][1] <= 0 && continue
+        ∑v⁰[Iₚ[i],Threads.threadid()] += 1
+        ∑v¹[Iₚ[i],Threads.threadid()] += vₚ[i]
+        ∑v²[Iₚ[i],Threads.threadid()] += sum(vₚ[i].^2)
     end
 end
 
-function relaxation_parameters!(mesh, species, time_step, threadid)
-    for i in eachindex(mesh.cells, threadid)
-        cell = mesh.cells[i]
+function calculate_relaxation_parameters!(mesh, species, time_step)
+    ∑v⁰, ∑v¹, ∑v² = mesh.∑v⁰, mesh.∑v¹, mesh.∑v²
+    ρ, u, T, Pᵣₑₗₐₓ, σ = mesh.density, mesh.velocity, mesh.temperature, mesh.relaxation_probability, mesh.scale_parameter
+    ω, m, Tᵣ, ωᵣ = species.weighting, species.mass, species.ref_temperature, species.ref_exponent
+    V = prod(cellsize(mesh))
 
-        N, cell.bulk_velocity, σ² = calculate_moments(cell.raw_moments)
-
-        cell.scale_parameter = σ² <= 0 ? 0 : √σ²
-
-        # We only need the density and temperature for the visualization!
-        cell.density = density(N, species, mesh)
-        cell.temperature = temperature(σ², species)
-        cell.relaxation_probability = relaxation_probability(
-            cell.density, cell.temperature, time_step, species
-        )
+    cell_indices = CartesianIndices(NUM_CELLS)
+    @batch for I in cell_indices
+        N, u[I], σ² = calculate_moments(∑v⁰, ∑v¹, ∑v², I)
+        σ = iszero(σ²) ? zero(eltype(σ²)) : √σ²
+        ρ[I] = ω * m * N / V
+        T[I] = σ² * m / BOLTZMANN_CONST
+        μ = μᵣ * (T / Tᵣ)^ωᵣ
+        ν = ρ[I] * BOLTZMANN_CONST * T[I] / (μ * m)
+        Pᵣₑₗₐₓ[I] = 1 - exp(-time_step * ν)
     end
 end
 
 function relax_particles!(particles, mesh)
-    for p in particles
-        cell = mesh.cells[p.index]
-        rand() > cell.relaxation_probability && continue
-        p.velocity = cell.bulk_velocity + cell.scale_parameter * randn(typeof(p.velocity))
+    Iₚ, vₚ = particles.index, particles.velocity
+    u, σ, Pᵣₑₗₐₓ = mesh.velocity, mesh.scale_parameter, mesh.relaxation_probability
+
+    @batch for i in eachindex(Iₚ)
+        rand() > Pᵣₑₗₐₓ[Iₚ[i]] && continue
+        vₚ[i] = u[Iₚ[i]] + σ[Iₚ[i]] * randn(eltype(vₚ))
     end
 end
 
-function conservation_parameters!(mesh, threadid)
-    for i in eachindex(mesh.cells, threadid)
-        cell = mesh.cells[i]
-        _, cell.tmp_bulk_velocity, σ² = calculate_moments(cell.raw_moments)
-        cell.conservation_ratio = σ² <= 0 ? 0 : cell.scale_parameter / √(σ²)
+function enforce_conservation!(particles, mesh)
+    u, uₜₘₚ, σ, ratio = mesh.velocity, mesh.unconserved_velocity, mesh.scale_parameter, mesh.conservation_ratio
+    Iₚ, vₚ = particles.index, particles.velocity
+
+    cell_indices = CartesianIndices(NUM_CELLS)
+    @batch for I in cell_indices
+        _, uₜₘₚ[I], σ² = calculate_moments(∑v⁰, ∑v¹, ∑v², I)
+        ratio[I] = iszero(σ²) ? zero(eltype(ratio)) : σ[I] / √σ²
+    end
+
+    @batch for i in eachindex(Iₚ)
+        vₚ[i] = u[Iₚ[i]] + ratio[Iₚ[i]] * (vₚ[i] - uₜₘₚ[Iₚ[i]])
     end
 end
 
-function conservation_step!(particles, mesh)
-    for p in particles
-        cell = mesh.cells[p.index]
-        p.velocity = cell.bulk_velocity +
-            cell.conservation_ratio * (p.velocity - cell.tmp_bulk_velocity)
-    end
+function calculate_moments(∑v⁰, ∑v¹, ∑v², I)
+    N = sum(@view(∑v⁰[I,:]))
+    Nu = sum(@view(∑v¹[I,:]))
+    Nu² = sum(@view(∑v²[I,:]))
+
+    # Cell is empty
+    N < 1 && return zero(eltype(∑v⁰)), zero(eltype(∑v¹)), zero(eltype(∑v²))
+
+    u = Nu / N
+
+    # Only 1 particle in cell
+    N == 1 && return N, u, zero(eltype(∑v²))
+
+    ∑c² = Nu² - sum(Nu.^2) / N
+    σ² = ∑c² / (3(N - 1))
+    return N, u, σ²
 end
-
-function calculate_moments(raw_moments)
-    N = sum(∑ₚ.v⁰ for ∑ₚ in raw_moments)
-    ∑v = sum(∑ₚ.v¹ for ∑ₚ in raw_moments)
-    ∑v² = sum(∑ₚ.v² for ∑ₚ in raw_moments)
-
-    N < 1 && return N, zeros(typeof(∑v)), 0
-    ∑c² = ∑v² - ∑v ⋅ ∑v / N
-    mean = ∑v / N
-    N < 2 && return N, mean, 0
-    variance = ∑c² / (3(N - 1))
-    return N, mean, variance
-end
-
-function relaxation_probability(ρ, T, Δt, species)
-    ν = relaxation_frequency(ρ, T, species)
-    return 1 - exp(-Δt * ν)
-end
-
-function relaxation_frequency(ρ, T, species)
-    T <= 0 && return 0
-    m = species.mass
-    μ = dynamic_viscosity(
-        T,
-        species.ref_temperature,
-        species.ref_viscosity,
-        species.ref_exponent
-    )
-    return ρ * BOLTZMANN_CONST * T / (μ * m)
-end
-
-density(N, species, mesh) = species.weighting * species.mass * N / cellvolume(mesh)
-
-temperature(σ², species) = σ² * species.mass / BOLTZMANN_CONST
-
-dynamic_viscosity(T, Tᵣ, μᵣ, ωᵣ) = μᵣ * (T / Tᵣ)^ωᵣ

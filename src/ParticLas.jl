@@ -63,46 +63,32 @@ function julia_main()::Cint
     return 0
 end
 
+# TODO do we need particlas_path?
 function run_particlas(lang="english", particlas_path=string(split(pathof(ParticLas), "src")[1]))
-
-
-    mesh, species, time_step, barrier = setup_simulation()
+    particles = [zero(Particle) for _ in 1:MAX_NUM_Particles]
+    mesh = Mesh()
+    species = Species()
+    time_step = 0.0
     gui_data = setup_gui(lang, particlas_path)
-
     channel = SwapChannel(CommunicationData)
 
-
-    # Add simulation threads
-    for threadid in 1:(Threads.nthreads(:default))
-        Threads.@spawn :default try
-            particles = AllocatedVector(Particle, MAX_NUM_PARTICLES_PER_THREAD)
-            simulation_thread(
-                particles,
-                mesh,
-                species,
-                time_step,
-                barrier,
-                channel,
-                threadid
-            )
-        catch e
-            io = open(string(threadid, "_sim.error"), "w")
+    # Start simulation
+    Threads.@spawn :default try
+        run_simulation(particles, mesh, species, time_step, channel)
+    catch e
+        open("sim.error", "w") do io
             showerror(io, e, catch_backtrace())
-            close(io)
-            sleep(0.2)
-            raise_error(barrier)
-            raise_error(channel)
         end
+        raise_error(channel)
     end
 
     # Start GUI renderloop
     try
         renderloop(gui_data, channel)
     catch e
-        io = open(string("gui.error"), "w")
-        showerror(io, e, catch_backtrace())
-        close(io)
-        sleep(0.2)
+        open("gui.error", "w") do io
+            showerror(io, e, catch_backtrace())
+        end
         raise_error(channel)
     finally
         GLFW.make_windowed!(gui_data.screen.glscreen)

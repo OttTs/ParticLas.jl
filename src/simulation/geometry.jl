@@ -1,4 +1,3 @@
-
 struct Line
     point::Point2{Float64}
     vector::Vec2{Float64}
@@ -6,9 +5,8 @@ struct Line
     Line(p::Point2, v::Vec2) = new(p, v)
 end
 
-points(l::Line) = (l.point, l.point + l.vector)
-pointfrom(l::Line) = l.point
-pointto(l::Line) = l.point + l.vector
+startpoint(l::Line) = l.point
+endpoint(l::Line) = l.point + l.vector
 
 function intersect(a::Line, b::Line)::Union{Nothing, Float64}
     (a.vector × b.vector) == 0 && return nothing

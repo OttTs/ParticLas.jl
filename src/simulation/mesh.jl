@@ -1,68 +1,74 @@
-mutable struct RawMoments
-    v⁰::Int64
-    v¹::Vec3{Float64}
-    v²::Float64
-    RawMoments() = new(0, zero(Vec3{Float64}), 0)
-end
-
-mutable struct Cell
-    raw_moments::Vector{RawMoments}
-    relaxation_probability::Float64
-    density::Float64
-    bulk_velocity::Vec3{Float64}
-    temperature::Float64
-    scale_parameter::Float64
-    tmp_bulk_velocity::Vec3{Float64}
-    conservation_ratio::Float64
-    walls::Vector{Wall} # TODO We may use an "AllocatedVector"
-    function Cell()
-        walls = Wall[]
-        sizehint!(walls, 1000)
-        return new(
-            [RawMoments() for _ in 1:(Threads.nthreads(:default))],
-            0, 0, zero(Vec3{Float64}), 0, 0, zero(Vec3{Float64}), 0, walls
-        )
-    end
-end
-
 struct Mesh
     length::NTuple{2,Float64}
-    cells::Matrix{Cell}
-    inflow_condition::InflowCondition
-    wall_condition::WallCondition
-    Mesh(length, numcells) = new(
+
+    inflow_bc::Ref{InflowBC}
+    wall_bc::Ref{WallBC}
+
+    walls::Array{Wall,3}
+
+    ∑v⁰::Array{Int64,3}
+    ∑v¹::Array{Vec3{Float64},3}
+    ∑v²::Array{Float64,3}
+
+    density::Array{Float64,2}
+    velocity::Array{Vec3{Float64},2}
+    temperature::Array{Float64,2}
+    relaxation_probability::Array{Float64,2}
+
+    unconserved_velocity::Array{Vec3{Float64},2}
+    scale_parameter::Array{Float64,2}
+    conservation_ratio::Array{Float64,2}
+
+    Mesh(length) = new(
         length,
-        [Cell() for i in 1:numcells[1], j in 1:numcells[2]],
-        InflowCondition(),
-        WallCondition()
+
+        Ref{InflowBC}(),
+        Ref{WallBC}(),
+
+        Array{Wall,3}(undef, NUM_CELLS..., MAX_NUM_WALLS_PER_CELL),
+
+        Array{Int64,3}(undef, NUM_CELLS..., Threads.nthreads(:default)),
+        Array{Vec3{Float64},3}(undef, NUM_CELLS..., Threads.nthreads(:default)),
+        Array{Float64,3}(undef, NUM_CELLS..., Threads.nthreads(:default)),
+
+        Array{Float64,2}(undef, NUM_CELLS),
+        Array{Vec3{Float64},2}(undef, NUM_CELLS),
+        Array{Float64,2}(undef, NUM_CELLS),
+        Array{Float64,2}(undef, NUM_CELLS),
+
+        Array{Vec3{Float64},2}(undef, NUM_CELLS),
+        Array{Float64,2}(undef, NUM_CELLS),
+        Array{Float64,2}(undef, NUM_CELLS)
     )
 end
 
-cellsize(m::Mesh) = m.length./numcells(m)
-cellvolume(m::Mesh) = prod(cellsize(m))
-numcells(m::Mesh) = size(m.cells)
-inbounds(index, m::Mesh) = checkbounds(Bool, m.cells, index)
+cellsize(m::Mesh) = m.length ./ NUM_CELLS
 inbounds(x::Point2, m::Mesh) = all(0 .< x .< m.length)
-index(x, m::Mesh) = CartesianIndex(ceil.(Int, x./ cellsize(m))...)
-function boundingindices(l::Line, m::Mesh; startindex=nothing, stopindex=nothing)
-    isnothing(startindex) && (startindex = index(pointfrom(l), m))
-    isnothing(stopindex) && (stopindex = index(pointto(l), m))
-    return (:)(extrema((startindex, stopindex))...)
-end
-
-Base.eachindex(m::Matrix, threadid) = (
-    @inline(); threadid:(Threads.nthreads(:default)):length(m)
-)
+index(x, m::Mesh) = CartesianIndex(ceil.(Int, x ./ cellsize(m))...)
 
 function add!(m::Mesh, w::Wall)
-    for index in boundingindices(w.line, m)
-        push!(m.cells[index].walls, w)
+    walls = m.walls
+
+    cell_indices = range(extrema((index(startpoint(l), m), index(endpoint(l), m)))...)
+    # TODO @batch is probably slower here
+    @batch for I in cell_indices
+        for i in 1:MAX_NUM_WALLS_PER_CELL
+            walls[I,i].normal == zero(type(walls[I,i].normal)) || continue
+
+            walls[I,i] = w
+            if i < MAX_NUM_WALLS_PER_CELL
+                walls[I,i+1] = Wall()
+            end
+
+            break
+        end
     end
 end
 
-function delete_walls!(m::Mesh, thread_id)
-    for i in eachindex(m.cells, thread_id)
-        cell = m.cells[i]
-        empty!(cell.walls)
+function delete_walls!(m::Mesh)
+    walls = m.walls
+    cell_indices = CartesianIndices(NUM_CELLS)
+    @batch for I in cell_indices
+        walls[I,1] = Wall()
     end
 end
