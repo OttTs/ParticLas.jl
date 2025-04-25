@@ -66,3 +66,5 @@ const BUTTON_COLOR_HOVER = RGBf(67/255, 100/255, 140/255)
 const WALLS_COLOR = RGBf(19/255, 51/255, 94/255)
 
 const FPS = 60
+
+const SHAPE_FILES = ["triangle.jl" "circle.jl"; "random.jl" "capsule.jl"]

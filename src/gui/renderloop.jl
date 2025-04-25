@@ -1,59 +1,58 @@
-function renderloop(gui_data, channel)
-    while !gui_data.terminate[]
+function renderloop(gui, channel)
+    while !gui.terminate[]
         starttime = frametime()
 
-        reset_data!(gui_data)
+        reset!(gui)
 
         # Get new events and render new frame
-        GLMakie.pollevents(gui_data.screen)
-        GLMakie.render_frame(gui_data.screen)
-        GLFW.SwapBuffers(gui_data.screen.glscreen)
+        GLMakie.pollevents(gui.screen)
+        GLMakie.render_frame(gui.screen)
+        GLFW.SwapBuffers(gui.screen.glscreen)
 
         # Send and receive the data
-        copy_data!(guidata(channel), gui_data)
-        swap!(channel) # TODO ? swap_blocking!(channel, 1)
-        set_new_data!(gui_data, guidata(channel))
-        yield() # We need to yield to allow other tasks to run!
+        send!(gui, data(channel, 1))
+        swap!(channel, 1)
+        update!(gui, data(channel, 1))
+        yield() # We need to yield to allow other tasks to run! (DO WE?)
 
         # Wait for the rest of the frame
         while frametime() - starttime < 1; end
     end
 end
 
-function reset_data!(gui_data)
-    gui_data.new_wall = (Point2{Float64}(NaN), Point2{Float64}(NaN))
-    gui_data.delete_particles = false
-    gui_data.delete_walls = false
-    empty!(gui_data.object_points)
+function reset!(gui::GUI)
+    gui.delete_particles = false
+    gui.delete_walls = false
+    empty!(gui.new_walls)
 end
 
-function copy_data!(channel_data, gui_data::GUIData)
+function send!(gui::GUI, data)
     fields = (
-        :terminate,
-        :pause,
+        :terminate, :pause,
+        :delete_walls, :delete_particles,
+        :do_collisions,
         :plot_type,
-        :inflow_altitude,
-        :inflow_velocity,
-        :new_wall,
-        :accomodation_coefficient,
-        :delete_walls,
-        :delete_particles,
-        :do_collisions
+        :inflow_altitude, :inflow_velocity,
+        :accomodation_coefficient
     )
     for i in fields
-        setfield!(channel_data, i, getfield(gui_data, i))
+        setfield!(data, i, getfield(gui, i))
     end
-    copy!(channel_data.object_points, gui_data.object_points)
+
+    empty!(data.new_walls)
+    for wall in gui.new_walls
+        push!(data.new_walls, wall)
+    end
 end
 
-function set_new_data!(gui_data::GUIData, channel_data)
-    if gui_data.plot_type == :particles
-        particle_positions = channel_data.particle_positions
-        for i in eachindex(particle_positions)
-            particle_positions[i] = particle_positions[i] .* gui_data.point_scaling
+function update!(gui::GUI, data)
+    if gui.plot_type == :particles
+        xₚ = data.particle_positions
+        for i in eachindex(xₚ)
+            xₚ[i] = xₚ[i] .* gui.point_scaling
         end
-        gui_data.particle_points[] = particle_positions
+        gui.particle_points[] = xₚ
     else
-        gui_data.mesh_values[] = channel_data.mesh_values
+        gui.mesh_values[] = data.mesh_values
     end
 end
