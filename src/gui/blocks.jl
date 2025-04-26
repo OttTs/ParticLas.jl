@@ -1,18 +1,19 @@
-function image(img_path, center_position, height)
+function image(scene, img_path, center_position, height)
     file = GLMakie.load(img_path)
     hsize = (round(Int, /(GLMakie.size(file)...) * height), height).÷2
     img = GLMakie.image!(scene,
-        center_position[1].+(-hsize[1]:hsize[1]),
-        center_position[2].+(-hsize[2]:hsize[2]),
-        GLMakie.rotr(file)
+        center_position[1].+(-hsize[1],hsize[1]),
+        center_position[2].+(-hsize[2],hsize[2]),
+        GLMakie.rotr90(file)
     )
     GLMakie.translate!(img, (0, 0, 1)) # foreground
 end
 
 function button(gridpos, label; width=BUTTON_WIDTH)
-    return GLMakie.Button(gridpos, label,
-        fontsize = CONTENT_FONTSIZE,
-        width,
+    return GLMakie.Button(gridpos,
+        label=label,
+        fontsize=CONTENT_FONTSIZE,
+        width=width,
         buttoncolor=BUTTON_COLOR_INACTIVE,
         buttoncolor_active=BUTTON_COLOR_ACTIVE,
         buttoncolor_hover=BUTTON_COLOR_HOVER
@@ -34,7 +35,7 @@ function close_button(scene, bbox)
         labelcolor=RGBf(0.8,0.8,0.8),
         labelcolor_active=RGBf(0.8,0.8,0.8),
         labelcolor_hover=RGBf(0.8,0.8,0.8),
-        fontsize=(close_button_size*2)÷3,
+        fontsize=(btn_size*2)÷3,
         strokecolor=MENU_BACKGROUND_COLOR,
         strokewidth=1
     )
@@ -60,7 +61,9 @@ function toggle(gridpos, label)
 end
 
 function slider(gridpos, range, startvalue, labels)
-    sl = GLMakie.Slider(gridpos, range, startvalue,
+    sl = GLMakie.Slider(gridpos,
+        range=range,
+        startvalue=startvalue,
         linewidth = SLIDER_LINE_WIDTH,
         snap=false,
         color_inactive=SLIDER_COLOR_RIGHT,
@@ -108,8 +111,8 @@ function box(scene, position, size, color)
         width = size[1] + strokewidth,
         height = size[2] + strokewidth,
         strokecolor = BACKGROUND_COLOR,
-        strokewidth,
-        color
+        strokewidth = strokewidth,
+        color = color
     )
 end
 
@@ -119,7 +122,7 @@ function menu(gridpos, options, label)
     mn = GLMakie.Menu(
         gridpos,
         dropdown_arrow_size = CONTENT_FONTSIZE * 2 ÷ 3,
-        options,
+        options = options,
         default = options[1],
         fontsize = CONTENT_FONTSIZE,
         cell_color_active=MENU_COLOR_ACTIVE,
@@ -130,7 +133,7 @@ function menu(gridpos, options, label)
     )
 
     grid = GLMakie.hgrid!( # TODO: This will not work since layout[n,:] = ...
-        GLMakie.Label(layout[n,:], label; fontsize = CONTENT_FONTSIZE, halign=:left), mn
+        GLMakie.Label(gridpos, label; fontsize = CONTENT_FONTSIZE, halign=:left), mn
     )
 
     return grid, mn

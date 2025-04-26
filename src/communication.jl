@@ -18,7 +18,7 @@ mutable struct SharedData
         particle_positions = zeros(Point2f, MAX_NUM_PARTICLES_VISU)
         mesh_values = zeros(Float32, NUM_CELLS)
         return new(
-            false, true, false, false,
+            false, true, false, false, true,
             :particles,
             DEFAULT_ALTITUDE, DEFAULT_VELOCITY, DEFAULT_ACCOMODATION_COEFFICIENT,
             new_walls,

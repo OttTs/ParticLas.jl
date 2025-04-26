@@ -4,7 +4,7 @@ mutable struct GUI
     delete_walls::Bool
     delete_particles::Bool
     do_collisions::Bool
-    plot_type::Symbol
+    plot_type::Observable{Symbol}
     inflow_altitude::Float64 # TODO change to inflow_density
     inflow_velocity::Float64
     accomodation_coefficient::Float64
@@ -24,9 +24,9 @@ mutable struct GUI
         sizehint!(wall_points[], 1000000)
         return new(
             false, true, false, false, true,
-            :particles,
+            Observable{Symbol}(:particles),
             DEFAULT_ALTITUDE, DEFAULT_VELOCITY, DEFAULT_ACCOMODATION_COEFFICIENT,
-            new_walls, particle_points, mesh_values, wall_point
+            new_walls, particle_points, mesh_values, wall_points
         )
     end
 end

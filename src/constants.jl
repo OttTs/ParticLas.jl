@@ -2,6 +2,7 @@
 # Simulation parameters
 # =================================================================================================
 const MAX_NUM_PARTICLES = 10^6
+const MAX_NUM_PARTICLES_VISU = 10^5
 const NUM_CELLS = (120, 80)
 
 # Species parameters

@@ -12,12 +12,12 @@ function init_gui(lang, path)
 
     colorrange, walls = create_display(scene, gui;
         position=(BORDER_WIDTH, BORDER_WIDTH),
-        size=resolution .- (2 * BORDER_WIDTH + MENU_WIDTH, 2 * BORDER_WIDTH)
+        size=gui.resolution .- (2 * BORDER_WIDTH + MENU_WIDTH, 2 * BORDER_WIDTH)
     )
 
     create_menu(scene, gui, path, colorrange, walls; # display_size, path
-        position=(resolution[1] - BORDER_WIDTH - MENU_WIDTH, BORDER_WIDTH),
-        size=(MENU_WIDTH, resolution[2] - 2 * BORDER_WIDTH)
+        position=(gui.resolution[1] - BORDER_WIDTH - MENU_WIDTH, BORDER_WIDTH),
+        size=(MENU_WIDTH, gui.resolution[2] - 2 * BORDER_WIDTH)
     )
 
     gui.screen = GLMakie.Screen(scene, start_renderloop=false, focus_on_show=true)
@@ -43,7 +43,7 @@ function create_display(scene, gui; position, size)
         interpolate = true,
         colormap = :afmhot,
         colorrange,
-        visible =  GLMakie.@lift($(gui.plot_type) != :particles)
+        visible = GLMakie.@lift($(gui.plot_type) != :particles)
     )
     GLMakie.scatter!(display_scene, gui.particle_points;
         marker = GLMakie.FastPixel(),
@@ -64,7 +64,7 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
     # Create a GridLayout for the settings
     bbox = GLMakie.Rect(position..., size...)
-    layout = GLMakie.GridLayout(scene, bbox, valign = :top)
+    layout = GLMakie.GridLayout(scene; bbox = bbox, valign = :top)
     layout.parent = scene
     GLMakie.colsize!(layout, 1, GLMakie.Fixed(size[1] - 2 * SETTINGS_BORDER_WIDTH))
 
@@ -77,11 +77,11 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
     # ---------------------------------------------------------------------------------------------------
     # Add logos
-    x_mid = origin[1] + widths[1] ÷ 2
-    y_pos_logo = origin[2] + widths[2] - BORDER_WIDTH - 40
-    image(path * "logos/irs.png", (x_mid - 125, y_pos_logo), 60)
-    image(path * "logos/piclas.png", (x_mid + 125, y_pos_logo), 60)
-    image(path * "logos/particlas.png", (x_mid, y_pos_logo), 100)
+    x_mid = position[1] + size[1] ÷ 2
+    y_pos_logo = position[2] + size[2] - BORDER_WIDTH - 40
+    image(scene, path * "logos/irs.png", (x_mid - 125, y_pos_logo), 60)
+    image(scene, path * "logos/piclas.png", (x_mid + 125, y_pos_logo), 60)
+    image(scene, path * "logos/particlas.png", (x_mid, y_pos_logo), 100)
     # Create a box around the logos so that the other items in the GridLayout are below it
     GLMakie.Box(layout[gl_row,:], color=:transparent, strokewidth=0, height=100 + BORDER_WIDTH)
     gl_row += 1
@@ -111,12 +111,12 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
     # Wall stuff
     label(layout[gl_row, :], LANG_WALL_INTERACTION)
     gl_row += 1
-    sl = slider(layout[gl_row, :],
+    layout[gl_row, :], sl = slider(layout[gl_row, :],
         0:0.01:1,
         DEFAULT_ACCOMODATION_COEFFICIENT,
         (LANG_SPECULAR, LANG_DIFFUSE))
     gl_row += 1
-    tg = toggle(layout[gl_row, :], LANG_COLLISIONS)
+    layout[gl_row, :], tg = toggle(layout[gl_row, :], LANG_COLLISIONS)
     gl_row += 1
 
     # Listeners
@@ -137,7 +137,7 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
     # Listeners
     GLMakie.on(mn.selection) do _
-        gui.plot_type = (:particles, :ρ, :u, :T)[menu.i_selected[]]
+        gui.plot_type[] = (:particles, :ρ, :u, :T)[menu.i_selected[]]
         colorrange[] = get_colorrange(gui)
     end
 
@@ -147,11 +147,11 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
     gl_row += 1
     layout[gl_row, :] = bg = GLMakie.GridLayout(tellwidth=false)
     for row in 1:2, col in 1:2
-        bg[row, col] = button(layout[gl_row,:],
+        bg[row, col] = btn = button(layout[gl_row,:],
             LANG_SHAPE_LABELS[row, col];
             width=Int(MENU_WIDTH / 2 - 50))
 
-        GLMakie.on(bg[row, col].clicks) do _
+        GLMakie.on(btn.clicks) do _
             # TODO...
             include(particlas_path * "examples/" * SHAPE_FILES[i,j])
             for pt in pts
@@ -204,11 +204,11 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 end
 
 function get_colorrange(gui)
-    if gui.plot_type == :ρ
+    if gui.plot_type[] == :ρ
         return (0, 5 * gui.inflow_density)
-    elseif gui.plot_type == :u
+    elseif gui.plot_type[] == :u
         return (0, gui.inflow_velocity)
-    elseif gui.plot_type == :T
+    elseif gui.plot_type[] == :T
         return (0, MASS * gui.inflow_velocity^2 / (3BOLTZMANN_CONST) + INFLOW_TEMPERATURE)
     end
 end

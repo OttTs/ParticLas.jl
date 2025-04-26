@@ -14,7 +14,7 @@ import PackageCompiler
 
 include("constants.jl")
 include("communication.jl")
-include("simulation.jl")
+#include("simulation.jl")
 include("gui.jl")
 
 
@@ -65,35 +65,35 @@ end
 
 # TODO do we need particlas_path?
 function run_particlas(lang="english", particlas_path=string(split(pathof(ParticLas), "src")[1]))
-    particles = [zero(Particle) for _ in 1:MAX_NUM_Particles]
-    mesh = Mesh()
-    species = Species()
-    time_step = 0.0
-    gui_data = setup_gui(lang, particlas_path)
-    channel = SwapChannel(CommunicationData)
+    #particles = Particles()
+    #mesh = Mesh()
+    #species = Species()
+    #time_step = 0.0
+    gui = init_gui(lang, particlas_path)
+    channel = SwapChannel(3)
 
     # Start simulation
-    Threads.@spawn :default try
-        run_simulation(particles, mesh, species, time_step, channel)
-    catch e
-        open("sim.error", "w") do io
-            showerror(io, e, catch_backtrace())
-        end
-        raise_error(channel)
-    end
+    #Threads.@spawn :default try
+    #    run_simulation(particles, mesh, species, time_step, channel)
+    #catch e
+    #    open("sim.error", "w") do io
+    #        showerror(io, e, catch_backtrace())
+    #    end
+    #    raise_error(channel)
+    #end
 
     # Start GUI renderloop
-    try
-        renderloop(gui_data, channel)
-    catch e
-        open("gui.error", "w") do io
-            showerror(io, e, catch_backtrace())
-        end
-        raise_error(channel)
-    finally
-        GLFW.make_windowed!(gui_data.screen.glscreen)
-        close(gui_data.screen; reuse=false)
-    end
+    #try
+        renderloop(gui, channel)
+    #catch e
+    #    open("gui.error", "w") do io
+    #        showerror(io, e, catch_backtrace())
+    #    end
+    #    raise_error(channel)
+    #finally
+        GLFW.make_windowed!(gui.screen.glscreen)
+        close(gui.screen; reuse=false)
+    #end
 end
 
 frametime() = (time_ns() / 1e9) * FPS

@@ -5,7 +5,7 @@ function renderloop(gui, channel)
         reset!(gui)
 
         # Get new events and render new frame
-        GLMakie.pollevents(gui.screen)
+        GLMakie.pollevents(gui.screen, GLMakie.Makie.RegularRenderTick) # TODO ...
         GLMakie.render_frame(gui.screen)
         GLFW.SwapBuffers(gui.screen.glscreen)
 
@@ -31,10 +31,10 @@ function send!(gui::GUI, data)
         :terminate, :pause,
         :delete_walls, :delete_particles,
         :do_collisions,
-        :plot_type,
         :inflow_altitude, :inflow_velocity,
         :accomodation_coefficient
     )
+    data.plot_type = gui.plot_type[]
     for i in fields
         setfield!(data, i, getfield(gui, i))
     end
@@ -46,7 +46,7 @@ function send!(gui::GUI, data)
 end
 
 function update!(gui::GUI, data)
-    if gui.plot_type == :particles
+    if gui.plot_type[] == :particles
         xₚ = data.particle_positions
         for i in eachindex(xₚ)
             xₚ[i] = xₚ[i] .* gui.point_scaling
