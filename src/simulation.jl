@@ -63,8 +63,7 @@ function send!(particles, mesh, data)
 end
 
 function update!(particles, mesh, species, data)
-    ρ = 1.225 * exp(-0.11856 * data.inflow_altitude)
-    mesh.inflow_bc[] = InflowBC(ρ, data.inflow_velocity, INFLOW_TEMPERATURE,species)
+    mesh.inflow_bc[] = InflowBC(data.inflow_density, data.inflow_velocity, INFLOW_TEMPERATURE,species)
     mesh.wall_bc[] = WallBC(WALL_TEMPERATURE, data.accomodation_coefficient, species)
 
     for points in data.new_walls

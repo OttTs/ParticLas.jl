@@ -59,7 +59,7 @@ function create_display(scene, gui; position, size)
     return colorrange, walls
 end
 
-function create_menu(scene, gui_data, path, colorrange, walls; position, size)
+function create_menu(scene, gui, path, colorrange, walls; position, size)
     box(scene, position, size, MENU_BACKGROUND_COLOR)
 
     # Create a GridLayout for the settings
@@ -70,7 +70,7 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
     btn = close_button(scene, bbox)
     GLMakie.on(btn.clicks) do _
-        gui_data.terminate = true
+        gui.terminate = true
     end
 
     gl_row = 1
@@ -121,11 +121,11 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
     # Listeners
     GLMakie.on(sl.value) do coefficient
-        gui_data.accomodation_coefficient = coefficient
+        gui.accomodation_coefficient = coefficient
     end
 
     GLMakie.on(tg.active) do active
-        gui_data.do_collisions = active
+        gui.do_collisions = active
     end
 
     # ---------------------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
     # Listeners
     GLMakie.on(mn.selection) do _
-        gui.plot_type[] = (:particles, :ρ, :u, :T)[menu.i_selected[]]
+        gui.plot_type[] = (:particles, :ρ, :u, :T)[mn.i_selected[]]
         colorrange[] = get_colorrange(gui)
     end
 
@@ -153,14 +153,15 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
         GLMakie.on(btn.clicks) do _
             # TODO...
-            include(particlas_path * "examples/" * SHAPE_FILES[i,j])
-            for pt in pts
+            include(path * "examples/" * SHAPE_FILES[row,col])
+            for i in eachindex(pts)
                 # TODO scaling
-                push!(walls[], pt .* display_size ./ MESH_LENGTH)
+                #push!(walls[], pt .* display_size ./ MESH_LENGTH)
+                push!(gui.new_walls, (pts[i], pts[i % length(pts) + 1]))
             end
             push!(walls[], Point2f(NaN))
             notify(walls)
-            append!(gui.new_walls, pts)
+            # append!(gui.new_walls, pts) # TODO
         end
 
     end
@@ -190,7 +191,7 @@ function create_menu(scene, gui_data, path, colorrange, walls; position, size)
 
     GLMakie.on(btn3.clicks) do _
         gui.pause = !gui.pause
-        buttonlabel[] = gui.pause ? "Play" : "Pause"
+        button_label[] = gui.pause ? "Play" : "Pause"
     end
 
     # ---------------------------------------------------------------------------------------------------
@@ -211,4 +212,5 @@ function get_colorrange(gui)
     elseif gui.plot_type[] == :T
         return (0, MASS * gui.inflow_velocity^2 / (3BOLTZMANN_CONST) + INFLOW_TEMPERATURE)
     end
+    return (NaN32, NaN32)
 end

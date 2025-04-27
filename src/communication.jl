@@ -5,7 +5,7 @@ mutable struct SharedData
     delete_particles::Bool
     do_collisions::Bool
     plot_type::Symbol
-    inflow_altitude::Float64
+    inflow_density::Float64
     inflow_velocity::Float64
     accomodation_coefficient::Float64
     new_walls::Vector{NTuple{2, Point2f}}

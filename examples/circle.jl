@@ -8,4 +8,4 @@ function draw_circle()
     push!(pts, pts[1])
     return pts
 end
-object_points = draw_circle()
+pts = draw_circle()

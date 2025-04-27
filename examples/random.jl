@@ -9,4 +9,4 @@ function draw_random()
     push!(pts, pts[1])
     return pts
 end
-object_points = draw_random()
+pts = draw_random()

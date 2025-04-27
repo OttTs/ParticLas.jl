@@ -5,7 +5,7 @@ function setup_drawing_listener(scene, gui, walls)
         p = p .- BORDER_WIDTH # TODO Why - BORDER_WIDTH?
 
         ispressed = GLMakie.ispressed(scene, GLMakie.Mouse.left)
-        isinside = all(0 .< p .< size)
+        isinside = all(0 .< p .< size(scene))
 
         if ispressed && isinside && !isdrawing[]
             isdrawing[] = true
@@ -13,12 +13,12 @@ function setup_drawing_listener(scene, gui, walls)
         elseif ispressed && isinside && isdrawing[]
             walls[][end] = p
             if norm(walls[][end] - walls[][end-1]) > MIN_WALL_LENGTH
-                push!(gui.new_walls, ((walls[][end-1], walls[][end]), size)) # TODO
+                #push!(gui.new_walls, ((walls[][end-1], walls[][end]), size)) # TODO
                 push!(walls[], p)
             end
         elseif isdrawing[]
             isdrawing[] = false
-            push!(gui.new_walls, ((walls[][end-1], walls[][end]), size)) # TODO
+            #push!(gui.new_walls, ((walls[][end-1], walls[][end]), size)) # TODO
             push!(walls[], Point2f(NaN))
         end
 

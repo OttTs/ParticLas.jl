@@ -11,4 +11,4 @@ function draw_capsule()
     push!(pts, Point2f(0.7 + r * (0.6 - cos(-ϕₘₐₓ)), 0.5 + r * sin(-ϕₘₐₓ)))
     return pts
 end
-object_points = draw_capsule()
+pts = draw_capsule()
