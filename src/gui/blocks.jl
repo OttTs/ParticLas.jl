@@ -1,6 +1,6 @@
 function image(scene, img_path, center_position, height)
     file = GLMakie.load(img_path)
-    hsize = (round(Int, /(GLMakie.size(file)...) * height), height).÷2
+    hsize = (round(Int, GLMakie.size(file)[2]/GLMakie.size(file)[1] * height), height).÷2
     img = GLMakie.image!(scene,
         center_position[1].+(-hsize[1],hsize[1]),
         center_position[2].+(-hsize[2],hsize[2]),
@@ -44,8 +44,8 @@ end
 function toggle(gridpos, label)
     tg = GLMakie.Toggle(gridpos,
         active=true,
-        height = SLIDER_LINE_WIDTH / 0.66,
-        width = SLIDER_LINE_WIDTH * 2.5,
+        markersize = SLIDER_LINE_WIDTH / 0.66,
+        length = SLIDER_LINE_WIDTH * 2.5,
         framecolor_active=SLIDER_COLOR_LEFT,
         framecolor_inactive=SLIDER_COLOR_RIGHT,
         buttoncolor=SLIDER_COLOR_CIRCLE

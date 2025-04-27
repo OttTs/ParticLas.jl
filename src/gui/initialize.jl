@@ -12,7 +12,7 @@ function init_gui(lang, path)
 
     colorrange, walls = create_display(scene, gui;
         position=(BORDER_WIDTH, BORDER_WIDTH),
-        size=gui.resolution .- (2 * BORDER_WIDTH + MENU_WIDTH, 2 * BORDER_WIDTH)
+        size=gui.resolution .- (3 * BORDER_WIDTH + MENU_WIDTH, 2 * BORDER_WIDTH)
     )
 
     create_menu(scene, gui, path, colorrange, walls; # display_size, path
@@ -29,7 +29,7 @@ end
 
 function create_display(scene, gui; position, size)
     display_scene = GLMakie.Scene(scene;
-        px_area=GLMakie.Rect(position..., size...),
+        viewport=GLMakie.Rect(position..., size...),
         backgroundcolor=DISPLAY_BACKGROUND_COLOR,
         clear=true
     )
@@ -79,7 +79,7 @@ function create_menu(scene, gui, path, colorrange, walls; position, size)
     # Add logos
     x_mid = position[1] + size[1] ÷ 2
     y_pos_logo = position[2] + size[2] - BORDER_WIDTH - 40
-    image(scene, path * "logos/irs.png", (x_mid - 125, y_pos_logo), 60)
+    image(scene, path * "logos/irs.png", (x_mid - 125, y_pos_logo), 70)
     image(scene, path * "logos/piclas.png", (x_mid + 125, y_pos_logo), 60)
     image(scene, path * "logos/particlas.png", (x_mid, y_pos_logo), 100)
     # Create a box around the logos so that the other items in the GridLayout are below it
