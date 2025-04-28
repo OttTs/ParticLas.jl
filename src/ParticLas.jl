@@ -10,11 +10,12 @@ using StaticArrays: @SMatrix
 using SpecialFunctions: erf
 using Printf: @sprintf
 import PackageCompiler
+using Polyester: @batch
 
 
 include("constants.jl")
 include("communication.jl")
-#include("simulation.jl")
+include("simulation.jl")
 include("gui.jl")
 
 
@@ -45,8 +46,6 @@ function create_app(dst=nothing)
     cp(pkg_path * "/languages", dst * "/bin/languages")
 end
 
-# TODO num_threads is given by Threads.nthreads(:default)
-
 function julia_main()::Cint
     if length(ARGS) ≥ 1
         lang = ARGS[1]
@@ -65,35 +64,36 @@ end
 
 # TODO do we need particlas_path?
 function run_particlas(lang="english", particlas_path=string(split(pathof(ParticLas), "src")[1]))
-    #particles = Particles()
-    #mesh = Mesh()
-    #species = Species()
-    #time_step = 0.0
+    particles = Particles()
+    mesh = Mesh(MESH_LENGTH)
+    species = Species()
+    time_step = 1E-6
     gui = init_gui(lang, particlas_path)
     channel = SwapChannel(3)
 
     # Start simulation
-    #Threads.@spawn :default try
-    #    run_simulation(particles, mesh, species, time_step, channel)
-    #catch e
-    #    open("sim.error", "w") do io
-    #        showerror(io, e, catch_backtrace())
-    #    end
-    #    raise_error(channel)
-    #end
+    Threads.@spawn :default try
+        run_simulation(particles, mesh, species, time_step, channel)
+    catch e
+        open("sim.error", "w") do io
+            showerror(io, e, catch_backtrace())
+        end
+        raise_error(channel)
+    end
 
     # Start GUI renderloop
-    #try
+    try
+        println(Threads.threadpool())
         renderloop(gui, channel)
-    #catch e
-    #    open("gui.error", "w") do io
-    #        showerror(io, e, catch_backtrace())
-    #    end
-    #    raise_error(channel)
-    #finally
+    catch e
+        open("gui.error", "w") do io
+            showerror(io, e, catch_backtrace())
+        end
+        raise_error(channel)
+    finally
         GLFW.make_windowed!(gui.screen.glscreen)
         close(gui.screen; reuse=false)
-    #end
+    end
 end
 
 frametime() = (time_ns() / 1e9) * FPS

@@ -11,22 +11,20 @@ mutable struct GUI
     new_walls::Vector{NTuple{2, Point2f}}
     particle_points::Observable{Vector{Point2f}}
     mesh_values::Observable{Matrix{Float32}}
-    wall_points::Observable{Vector{Point2f}}
+    display_scaling::NTuple{2, Float64}
     resolution::NTuple{2, Int64}
     screen::GLMakie.Screen{GLFW.Window}
 
     function GUI()
         new_walls = NTuple{2, Point2f}[]
         sizehint!(new_walls, 1000)
-        particle_points = Observable(Point2f[])# TODO zeros(Point2f, MAX_NUM_PARTICLES_VISU)
+        particle_points = Observable(zeros(Point2f, NUM_PARTICLES_VISU))
         mesh_values = Observable(zeros(Float32, NUM_CELLS))
-        wall_points = Observable(Point2f[])
-        sizehint!(wall_points[], 1000000)
         return new(
             false, true, false, false, true,
             Observable{Symbol}(:particles),
-            DEFAULT_ALTITUDE, DEFAULT_VELOCITY, DEFAULT_ACCOMODATION_COEFFICIENT,
-            new_walls, particle_points, mesh_values, wall_points
+            1.225 * exp(-0.11856 *DEFAULT_ALTITUDE) , DEFAULT_VELOCITY, DEFAULT_ACCOMODATION_COEFFICIENT,
+            new_walls, particle_points, mesh_values
         )
     end
 end

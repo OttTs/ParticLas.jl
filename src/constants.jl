@@ -2,8 +2,10 @@
 # Simulation parameters
 # =================================================================================================
 const MAX_NUM_PARTICLES = 10^6
-const MAX_NUM_PARTICLES_VISU = 10^5
+const NUM_PARTICLES_VISU = 10^5
 const NUM_CELLS = (120, 80)
+const MAX_NUM_WALLS_PER_CELL = 1000
+const WALL_TEMPERATURE = 1000
 
 # Species parameters
 const WEIGHTING = 5E15
@@ -30,7 +32,7 @@ const INFLOW_TEMPERATURE = 200
 const DEFAULT_ACCOMODATION_COEFFICIENT = 0.0
 
 # Dimensions
-
+const MIN_WALL_LENGTH = 5
 
 # Colors
 

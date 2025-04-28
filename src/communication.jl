@@ -15,7 +15,7 @@ mutable struct SharedData
     function SharedData()
         new_walls = NTuple{2, Point2f}[]
         sizehint!(new_walls, 1000)
-        particle_positions = zeros(Point2f, MAX_NUM_PARTICLES_VISU)
+        particle_positions = zeros(Point2f, NUM_PARTICLES_VISU)
         mesh_values = zeros(Float32, NUM_CELLS)
         return new(
             false, true, false, false, true,
@@ -37,7 +37,7 @@ end
 
 function swap!(c::SwapChannel, id)
     lock(c._condition) do
-        if c._current[id] + 1 == c._current[3 - id]
+        if c._current[id] % length(c._data) + 1 == c._current[3 - id]
             # The next data bin is in use, wait until it is free
             wait(c._condition, first=true)
             c._current[id] = c._current[id] % length(c._data) + 1

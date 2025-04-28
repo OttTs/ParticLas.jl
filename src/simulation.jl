@@ -8,14 +8,7 @@ include("simulation/mesh.jl")
 include("simulation/collision_operator.jl")
 include("simulation/movement.jl")
 
-function setup_simulation()
-    mesh = Mesh(MESH_LENGTH)
-    species = Species()
-    time_step = 1E-6
-    return mesh, species, time_step
-end
-
-function run_simulation!(particles, mesh, species, time_step, channel)
+function run_simulation(particles, mesh, species, time_step, channel)
     while !data(channel,2).terminate
         if !data(channel,2).pause
             insert_particles!(particles, mesh, time_step)
@@ -27,7 +20,7 @@ function run_simulation!(particles, mesh, species, time_step, channel)
         calculate_relaxation_parameters!(mesh, species, time_step)
 
         # Collision Step
-        if data(channel,2).pause && data(channel,2).do_collisions
+        if !data(channel,2).pause && data(channel,2).do_collisions
             relax_particles!(particles, mesh)
             sum_up_particles!(particles, mesh)
             enforce_conservation!(particles, mesh)
@@ -54,8 +47,8 @@ function send!(particles, mesh, data)
     elseif data.plot_type == :ρ
         data.mesh_values .= mesh.density
     elseif data.plot_type == :u
-        for i in eachindex(mesh.bulk_velocity)
-            data.mesh_values[i] = sqrt(sum(mesh.bulk_velocity[i].^2))
+        for i in eachindex(mesh.velocity)
+            data.mesh_values[i] = sqrt(sum(mesh.velocity[i].^2))
         end
     else # data.plot_type == :T
         data.mesh_values .= mesh.temperature
@@ -63,7 +56,7 @@ function send!(particles, mesh, data)
 end
 
 function update!(particles, mesh, species, data)
-    mesh.inflow_bc[] = InflowBC(data.inflow_density, data.inflow_velocity, INFLOW_TEMPERATURE,species)
+    mesh.inflow_bc[] = InflowBC(data.inflow_density, data.inflow_velocity, INFLOW_TEMPERATURE, species)
     mesh.wall_bc[] = WallBC(WALL_TEMPERATURE, data.accomodation_coefficient, species)
 
     for points in data.new_walls

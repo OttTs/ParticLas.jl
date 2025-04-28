@@ -17,7 +17,7 @@ function init_gui(lang, path)
 
     create_menu(scene, gui, path, colorrange, walls; # display_size, path
         position=(gui.resolution[1] - BORDER_WIDTH - MENU_WIDTH, BORDER_WIDTH),
-        size=(MENU_WIDTH, gui.resolution[2] - 2 * BORDER_WIDTH)
+        mn_size=(MENU_WIDTH, gui.resolution[2] - 2 * BORDER_WIDTH)
     )
 
     gui.screen = GLMakie.Screen(scene, start_renderloop=false, focus_on_show=true)
@@ -34,6 +34,8 @@ function create_display(scene, gui; position, size)
         clear=true
     )
     GLMakie.campixel!(display_scene)
+
+    gui.display_scaling = size ./ MESH_LENGTH
 
     colorrange = Observable{NTuple{2, Float32}}((NaN32, NaN32))
     GLMakie.heatmap!(display_scene,
@@ -52,6 +54,7 @@ function create_display(scene, gui; position, size)
         visible = GLMakie.@lift($(gui.plot_type) == :particles)
     )
     walls = Observable{Vector{Point2f}}(Point2f[])
+    sizehint!(walls[], 100000)
     GLMakie.lines!(display_scene, walls; linewidth = 2, color = WALLS_COLOR)
     box(display_scene, (0, 0), size, :transparent)
     setup_drawing_listener(display_scene, gui, walls)
@@ -59,14 +62,14 @@ function create_display(scene, gui; position, size)
     return colorrange, walls
 end
 
-function create_menu(scene, gui, path, colorrange, walls; position, size)
-    box(scene, position, size, MENU_BACKGROUND_COLOR)
+function create_menu(scene, gui, path, colorrange, walls; position, mn_size)
+    box(scene, position, mn_size, MENU_BACKGROUND_COLOR)
 
     # Create a GridLayout for the settings
-    bbox = GLMakie.Rect(position..., size...)
+    bbox = GLMakie.Rect(position..., mn_size...)
     layout = GLMakie.GridLayout(scene; bbox = bbox, valign = :top)
     layout.parent = scene
-    GLMakie.colsize!(layout, 1, GLMakie.Fixed(size[1] - 2 * SETTINGS_BORDER_WIDTH))
+    GLMakie.colsize!(layout, 1, GLMakie.Fixed(mn_size[1] - 2 * SETTINGS_BORDER_WIDTH))
 
     btn = close_button(scene, bbox)
     GLMakie.on(btn.clicks) do _
@@ -77,8 +80,8 @@ function create_menu(scene, gui, path, colorrange, walls; position, size)
 
     # ---------------------------------------------------------------------------------------------------
     # Add logos
-    x_mid = position[1] + size[1] ÷ 2
-    y_pos_logo = position[2] + size[2] - BORDER_WIDTH - 40
+    x_mid = position[1] + mn_size[1] ÷ 2
+    y_pos_logo = position[2] + mn_size[2] - BORDER_WIDTH - 40
     image(scene, path * "logos/irs.png", (x_mid - 125, y_pos_logo), 70)
     image(scene, path * "logos/piclas.png", (x_mid + 125, y_pos_logo), 60)
     image(scene, path * "logos/particlas.png", (x_mid, y_pos_logo), 100)
@@ -152,16 +155,15 @@ function create_menu(scene, gui, path, colorrange, walls; position, size)
             width=Int(MENU_WIDTH / 2 - 50))
 
         GLMakie.on(btn.clicks) do _
-            # TODO...
             include(path * "examples/" * SHAPE_FILES[row,col])
-            for i in eachindex(pts)
-                # TODO scaling
-                #push!(walls[], pt .* display_size ./ MESH_LENGTH)
-                push!(gui.new_walls, (pts[i], pts[i % length(pts) + 1]))
+            for pt in pts
+                push!(walls[], pt .* gui.display_scaling)
             end
             push!(walls[], Point2f(NaN))
             notify(walls)
-            # append!(gui.new_walls, pts) # TODO
+            for i in 2:length(pts)
+                push!(gui.new_walls, (pts[i-1], pts[i]))
+            end
         end
 
     end
@@ -181,8 +183,8 @@ function create_menu(scene, gui, path, colorrange, walls; position, size)
     # Listeners
     GLMakie.on(btn1.clicks) do _
         gui.delete_walls = true
-        empty!(gui.wall_points[])
-        notify(gui.wall_points)
+        empty!(walls[])
+        notify(walls)
     end
 
     GLMakie.on(btn2.clicks) do _

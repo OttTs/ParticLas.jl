@@ -132,7 +132,7 @@ function menu(gridpos, options, label)
         selection_cell_color_inactive=MENU_COLOR_INACTIVE
     )
 
-    grid = GLMakie.hgrid!( # TODO: This will not work since layout[n,:] = ...
+    grid = GLMakie.hgrid!(
         GLMakie.Label(gridpos, label; fontsize = CONTENT_FONTSIZE, halign=:left), mn
     )
 

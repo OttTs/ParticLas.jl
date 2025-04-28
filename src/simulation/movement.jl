@@ -3,6 +3,8 @@ function move_particles!(particles, mesh, time_step)
     xₚ, vₚ, Iₚ = particles.position, particles.velocity, particles.index
 
     @batch for i in eachindex(vₚ)
+        particles.index[i][1] < 0 && continue # Skip deleted particles
+
         wall = nothing
         Δt = time_step
 
@@ -16,8 +18,8 @@ function move_particles!(particles, mesh, time_step)
                 Iₚ[i] = Iₙ
                 break
             else
-                wall, α = next_hit
-                xₚ[i] += vₚ[i] * α * Δt
+                wall, α = wall_hit
+                xₚ[i] += trajectory.vector * α
                 vₚ[i] = collide(vₚ[i], wall, wall_bc)
                 Iₚ[i] = index(xₚ[i], mesh)
                 Δt *= (1 - α)
@@ -31,14 +33,14 @@ function find_wall_hit(trajectory::Line, walls; last_wall, I_start, I_stop)
     next_wall = nothing
     fraction = one(Float64)
 
-    I_start = CartesianIndex(min.(max.(I_start.I, 1), size(walls)[1:2]))
-    I_stop = CartesianIndex(min.(max.(I_stop.I, 1), size(walls)[1:2]))
-    for I in I_start:I_stop
+    I_min = CartesianIndex(max.(1, min.(I_start.I, I_stop.I)))
+    I_max = CartesianIndex(min.(size(walls)[1:2], max.(I_start.I, I_stop.I)))
+    for I in I_min:I_max
         for i in 1:MAX_NUM_WALLS_PER_CELL
-            walls[I,i].normal == zero(type(walls[I,i].normal)) && break
+            walls[I,i].normal == zero(typeof(walls[I,i].normal)) && break
             walls[I,i] == last_wall && continue
 
-            r = intersection(trajectory, walls[I,i].line)
+            r = intersect(trajectory, walls[I,i].line)
             isnothing(r) && continue
             if r < fraction
                 fraction = r
@@ -52,7 +54,7 @@ function find_wall_hit(trajectory::Line, walls; last_wall, I_start, I_stop)
 end
 
 function collide(velocity, wall, wall_bc)
-    vₙ = sum(velocity .* wall.normal)
+    vₙ = sum(Vec2(velocity) .* wall.normal)
 
     if rand() > wall_bc.accomodation_coefficient
         return typeof(velocity)(

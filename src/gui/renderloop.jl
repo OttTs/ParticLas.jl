@@ -11,7 +11,7 @@ function renderloop(gui, channel)
 
         # Send and receive the data
         send!(gui, data(channel, 1))
-        #swap!(channel, 1)
+        swap!(channel, 1)
         update!(gui, data(channel, 1))
         yield() # We need to yield to allow other tasks to run! (DO WE?)
 
@@ -49,9 +49,10 @@ function update!(gui::GUI, data)
     if gui.plot_type[] == :particles
         xₚ = data.particle_positions
         for i in eachindex(xₚ)
-            xₚ[i] = xₚ[i] #.* gui.point_scaling # TODO
+            xₚ[i] = xₚ[i] .* gui.display_scaling
         end
         gui.particle_points[] = xₚ
+        notify(gui.particle_points)
     else
         gui.mesh_values[] = data.mesh_values
     end

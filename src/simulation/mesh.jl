@@ -49,11 +49,11 @@ index(x, m::Mesh) = CartesianIndex(ceil.(Int, x ./ cellsize(m))...)
 function add!(m::Mesh, w::Wall)
     walls = m.walls
 
-    cell_indices = range(extrema((index(startpoint(l), m), index(endpoint(l), m)))...)
+    cell_indices = range(extrema((index(startpoint(w.line), m), index(endpoint(w.line), m)))...)
     # TODO @batch is probably slower here
     @batch for I in cell_indices
         for i in 1:MAX_NUM_WALLS_PER_CELL
-            walls[I,i].normal == zero(type(walls[I,i].normal)) || continue
+            walls[I,i].normal == zero(typeof(walls[I,i].normal)) || continue
 
             walls[I,i] = w
             if i < MAX_NUM_WALLS_PER_CELL
