@@ -5,18 +5,27 @@ function renderloop(gui, channel)
         reset!(gui)
 
         # Get new events and render new frame
-        GLMakie.pollevents(gui.screen, GLMakie.Makie.RegularRenderTick) # TODO ...
-        GLMakie.render_frame(gui.screen)
-        GLFW.SwapBuffers(gui.screen.glscreen)
+        #@sync begin
+            GLMakie.pollevents(gui.screen, GLMakie.Makie.RegularRenderTick) # TODO ...
+            GLMakie.render_frame(gui.screen)
+            GLFW.SwapBuffers(gui.screen.glscreen)
+        #end
 
         # Send and receive the data
         send!(gui, data(channel, 1))
+        t1 = frametime()
         swap!(channel, 1)
+        t2 = frametime()
         update!(gui, data(channel, 1))
-        yield() # We need to yield to allow other tasks to run! (DO WE?)
+        #yield() # We need to yield to allow other tasks to run! (DO WE?)
+
+        # TODO Delete (Only debug)
+        open("gui.time", "w") do io
+            write(io, "$(round(frametime() - t2 + t1 - starttime; digits=2))")
+        end
 
         # Wait for the rest of the frame
-        while frametime() - starttime < 1; end
+        #while frametime() - starttime < 1; end
     end
 end
 

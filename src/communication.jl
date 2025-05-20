@@ -20,7 +20,7 @@ mutable struct SharedData
         return new(
             false, true, false, false, true,
             :particles,
-            DEFAULT_ALTITUDE, DEFAULT_VELOCITY, DEFAULT_ACCOMODATION_COEFFICIENT,
+            1.225 * exp(-0.11856 *DEFAULT_ALTITUDE), DEFAULT_VELOCITY, DEFAULT_ACCOMODATION_COEFFICIENT,
             new_walls,
             particle_positions, mesh_values
         )

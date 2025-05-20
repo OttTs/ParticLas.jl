@@ -39,7 +39,8 @@ function create_app(dst=nothing)
     PackageCompiler.create_app(pkg_path, dst,
         precompile_execution_file=pkg_path * "/precompile.jl",
         include_lazy_artifacts=true,
-        force=true
+        force=true,
+        executables=["ParticLas" => "julia_main_2", "ParticLasProgram" => "julia_main"],
     )
     cp(pkg_path * "/logos", dst * "/bin/logos")
     cp(pkg_path * "/examples", dst * "/bin/examples")
@@ -62,6 +63,11 @@ function julia_main()::Cint
     return 0
 end
 
+function julia_main_2()::Cint
+    run(`./ParticLasProgram --julia-args -t6,1`)
+    return 0
+end
+
 # TODO do we need particlas_path?
 function run_particlas(lang="english", particlas_path=string(split(pathof(ParticLas), "src")[1]))
     particles = Particles()
@@ -69,7 +75,7 @@ function run_particlas(lang="english", particlas_path=string(split(pathof(Partic
     species = Species()
     time_step = 1E-6
     gui = init_gui(lang, particlas_path)
-    channel = SwapChannel(3)
+    channel = SwapChannel(60)
 
     # Start simulation
     Threads.@spawn :default try

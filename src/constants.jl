@@ -1,8 +1,8 @@
 # =================================================================================================
 # Simulation parameters
 # =================================================================================================
-const MAX_NUM_PARTICLES = 10^6
-const NUM_PARTICLES_VISU = 10^5
+const MAX_NUM_PARTICLES = 6*10^5
+const NUM_PARTICLES_VISU = 3*10^5
 const NUM_CELLS = (120, 80)
 const MAX_NUM_WALLS_PER_CELL = 1000
 const WALL_TEMPERATURE = 1000
@@ -22,11 +22,11 @@ const BOLTZMANN_CONST = 1.380649E-23
 # Inflow settings
 const MIN_ALTITUDE = 90
 const MAX_ALTITUDE = 120
-const DEFAULT_ALTITUDE = 105
+const DEFAULT_ALTITUDE = MIN_ALTITUDE#105
 
 const MIN_VELOCITY = 5000
 const MAX_VELOCITY = 10000
-const DEFAULT_VELOCITY = 7500
+const DEFAULT_VELOCITY = MAX_VELOCITY#7500
 const INFLOW_TEMPERATURE = 200
 
 const DEFAULT_ACCOMODATION_COEFFICIENT = 0.0

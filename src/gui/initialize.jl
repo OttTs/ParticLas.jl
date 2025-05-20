@@ -15,7 +15,7 @@ function init_gui(lang, path)
         size=gui.resolution .- (3 * BORDER_WIDTH + MENU_WIDTH, 2 * BORDER_WIDTH)
     )
 
-    create_menu(scene, gui, path, colorrange, walls; # display_size, path
+    create_menu(scene, gui, path, colorrange, walls;
         position=(gui.resolution[1] - BORDER_WIDTH - MENU_WIDTH, BORDER_WIDTH),
         mn_size=(MENU_WIDTH, gui.resolution[2] - 2 * BORDER_WIDTH)
     )
@@ -49,7 +49,7 @@ function create_display(scene, gui; position, size)
     )
     GLMakie.scatter!(display_scene, gui.particle_points;
         marker = GLMakie.FastPixel(),
-        markersize = 4,
+        markersize = 2,
         color = :black,
         visible = GLMakie.@lift($(gui.plot_type) == :particles)
     )

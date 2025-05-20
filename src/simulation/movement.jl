@@ -2,6 +2,7 @@ function move_particles!(particles, mesh, time_step)
     walls, wall_bc = mesh.walls, mesh.wall_bc[]
     xₚ, vₚ, Iₚ = particles.position, particles.velocity, particles.index
 
+    # TODO This is actually slower with @batch than without: WHY???
     @batch for i in eachindex(vₚ)
         particles.index[i][1] < 0 && continue # Skip deleted particles
 
@@ -12,6 +13,11 @@ function move_particles!(particles, mesh, time_step)
             trajectory = Line(xₚ[i], Vec2{Float64}(Δt * vₚ[i]))
             Iₙ = index(endpoint(trajectory), mesh) # TODO 1. Is precomputing the index faster? 2. Does mesh introduce allocations?
             wall_hit = find_wall_hit(trajectory, walls; last_wall = wall, I_start = Iₚ[i], I_stop = Iₙ)
+
+            # serial, wall_hit=nothing -> 0.2 frames
+            # batch, wall_hit=nothing -> 0.15 frames
+            # serial, wall_hit=wall -> 0.32 frames
+            #
 
             if isnothing(wall_hit)
                 xₚ[i] = endpoint(trajectory)
