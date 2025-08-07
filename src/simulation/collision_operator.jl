@@ -2,14 +2,16 @@ function sum_up_particles!(particles, mesh)
     ∑v⁰, ∑v¹, ∑v² = mesh.∑v⁰, mesh.∑v¹, mesh.∑v²
     Iₚ, vₚ = particles.index, particles.velocity
 
-    @batch for I in eachindex(∑v⁰)
+    #@batch
+    for I in eachindex(∑v⁰)
         ∑v⁰[I] = zero(eltype(∑v⁰))
         ∑v¹[I] = zero(eltype(∑v¹))
         ∑v²[I] = zero(eltype(∑v²))
     end
 
     # TODO Is there a better way to do this?
-    @batch for ithread in 1:Threads.nthreads(:default)
+    #@batch
+    for ithread in 1:Threads.nthreads(:default)
         for i in ithread:Threads.nthreads(:default):length(Iₚ)
             Iₚ[i][1] <= 0 && continue
             ∑v⁰[Iₚ[i],ithread] += 1
@@ -26,7 +28,8 @@ function calculate_relaxation_parameters!(mesh, species, time_step)
     V = prod(cellsize(mesh))
 
     cell_indices = CartesianIndices(NUM_CELLS)
-    @batch for I in cell_indices
+    #@batch
+    for I in cell_indices
         N, u[I], σ² = calculate_moments(∑v⁰, ∑v¹, ∑v², I)
         σ[I] = iszero(σ²) ? zero(eltype(σ²)) : √σ²
         ρ[I] = ω * m * N / V
@@ -41,7 +44,8 @@ function relax_particles!(particles, mesh)
     Iₚ, vₚ = particles.index, particles.velocity
     u, σ, Pᵣₑₗₐₓ = mesh.velocity, mesh.scale_parameter, mesh.relaxation_probability
 
-    @batch for i in eachindex(Iₚ)
+    #@batch
+    for i in eachindex(Iₚ)
         Iₚ[i][1] <= 0 && continue
         rand() > Pᵣₑₗₐₓ[Iₚ[i]] && continue
         vₚ[i] = u[Iₚ[i]] + σ[Iₚ[i]] * randn(eltype(vₚ))
@@ -54,12 +58,14 @@ function enforce_conservation!(particles, mesh)
     Iₚ, vₚ = particles.index, particles.velocity
 
     cell_indices = CartesianIndices(NUM_CELLS)
-    @batch for I in cell_indices
+    #@batch
+    for I in cell_indices
         _, uₜₘₚ[I], σ² = calculate_moments(∑v⁰, ∑v¹, ∑v², I)
         ratio[I] = iszero(σ²) ? zero(eltype(ratio)) : σ[I] / √σ²
     end
 
-    @batch for i in eachindex(Iₚ)
+    #@batch
+    for i in eachindex(Iₚ)
         Iₚ[i][1] <= 0 && continue
         vₚ[i] = u[Iₚ[i]] + ratio[Iₚ[i]] * (vₚ[i] - uₜₘₚ[Iₚ[i]])
     end

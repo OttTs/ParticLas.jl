@@ -12,12 +12,10 @@ using Printf: @sprintf
 import PackageCompiler
 using Polyester: @batch
 
-
 include("constants.jl")
 include("communication.jl")
 include("simulation.jl")
 include("gui.jl")
-
 
 """
     create_app(dst=nothing)
@@ -68,14 +66,12 @@ function julia_main_2()::Cint
     return 0
 end
 
-# TODO do we need particlas_path?
 function run_particlas(lang="english", particlas_path=string(split(pathof(ParticLas), "src")[1]))
     particles = Particles()
     mesh = Mesh(MESH_LENGTH)
     species = Species()
     time_step = 1E-6
-    gui = init_gui(lang, particlas_path)
-    channel = SwapChannel(60)
+    channel = SwapChannel(3)
 
     # Start simulation
     Threads.@spawn :default try
@@ -87,21 +83,9 @@ function run_particlas(lang="english", particlas_path=string(split(pathof(Partic
         raise_error(channel)
     end
 
-    # Start GUI renderloop
-    try
-        println(Threads.threadpool())
-        renderloop(gui, channel)
-    catch e
-        open("gui.error", "w") do io
-            showerror(io, e, catch_backtrace())
-        end
-        raise_error(channel)
-    finally
-        GLFW.make_windowed!(gui.screen.glscreen)
-        close(gui.screen; reuse=false)
-    end
+    launch_window(channel, lang, particlas_path)
 end
 
-frametime() = (time_ns() / 1e9) * FPS
+frametime(fps=60) = (time_ns() / 1e9) * fps
 
 end

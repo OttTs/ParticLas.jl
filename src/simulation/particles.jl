@@ -14,7 +14,8 @@ end
 
 function Base.empty!(p::Particles)
     indices = p.index
-    @batch for i in eachindex(indices)
+    #@batch
+    for i in eachindex(indices)
         p.index[i] = CartesianIndex(-1, -1)
         p.position[i] = Point2{Float64}(0, 0)
     end

@@ -3,7 +3,8 @@ function move_particles!(particles, mesh, time_step)
     xₚ, vₚ, Iₚ = particles.position, particles.velocity, particles.index
 
     # TODO This is actually slower with @batch than without: WHY???
-    @batch for i in eachindex(vₚ)
+    #@batch
+    for i in eachindex(vₚ)
         particles.index[i][1] < 0 && continue # Skip deleted particles
 
         wall = nothing

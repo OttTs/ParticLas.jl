@@ -44,7 +44,7 @@ function run_simulation(particles, mesh, species, time_step, channel)
                        $(round(t3 - t2; digits=2))\n
                        $(round(t4 - t3; digits=2))")
         end
-        swap!(channel, 2) # TODO uncomment
+        swap!(channel, 2)
         # TODO Start time measurement
         t1 = frametime()
         update!(particles, mesh, species, data(channel,2))
@@ -53,20 +53,21 @@ function run_simulation(particles, mesh, species, time_step, channel)
 end
 
 function send!(particles, mesh, data)
-    if data.plot_type == :particles
+    if data.variable_to_plot == :particles
         xₚ = particles.position
         x_visu = data.particle_positions
-        @batch for i in eachindex(x_visu)
+        #@batch
+        for i in eachindex(x_visu)
             j = (i - 1) * floor(Int, MAX_NUM_PARTICLES/NUM_PARTICLES_VISU) + 1
             x_visu[i] = xₚ[j]
         end
-    elseif data.plot_type == :ρ
+    elseif data.variable_to_plot == :ρ
         data.mesh_values .= mesh.density
-    elseif data.plot_type == :u
+    elseif data.variable_to_plot == :u
         for i in eachindex(mesh.velocity)
             data.mesh_values[i] = sqrt(sum(mesh.velocity[i].^2))
         end
-    else # data.plot_type == :T
+    else # data.variable_to_plot == :T
         data.mesh_values .= mesh.temperature
     end
 end

@@ -4,7 +4,7 @@ mutable struct SharedData
     delete_walls::Bool
     delete_particles::Bool
     do_collisions::Bool
-    plot_type::Symbol
+    variable_to_plot::Symbol
     inflow_density::Float64
     inflow_velocity::Float64
     accomodation_coefficient::Float64
@@ -37,12 +37,13 @@ end
 
 function swap!(c::SwapChannel, id)
     lock(c._condition) do
-        if c._current[id] % length(c._data) + 1 == c._current[3 - id]
+        next_id = c._current[id] % length(c._data) + 1
+        if next_id == c._current[3 - id]
             # The next data bin is in use, wait until it is free
             wait(c._condition, first=true)
-            c._current[id] = c._current[id] % length(c._data) + 1
+            c._current[id] = next_id
         else
-            c._current[id] = c._current[id] % length(c._data) + 1
+            c._current[id] = next_id
             notify(c._condition)
         end
     end

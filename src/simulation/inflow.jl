@@ -25,7 +25,8 @@ function insert_particles!(particles, mesh, time_step)
     num_new_particles = find_empty_indices!(particles, num_new_particles)
 
     # Insert new particles
-    @batch for i in 1:num_new_particles
+    #@batch
+    for i in 1:num_new_particles
         xₚ[free_indices[i]] = eltype(xₚ)(0, rand() * mesh.length[2])
         vₚ[free_indices[i]] = sample_inflow_velocity(inflow_bc.most_probable_velocity, inflow_bc.velocity)
         Iₚ[free_indices[i]] = index(xₚ[free_indices[i]], mesh)
